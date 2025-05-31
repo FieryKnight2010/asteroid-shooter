@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Bird from './Bird';
 import Pipe from './Pipe';
@@ -32,7 +31,7 @@ const FlappyBird = () => {
   const PIPE_SPEED = 3;
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 600;
-  const GROUND_HEIGHT = 20;
+  const GROUND_HEIGHT = 80;
   const MIN_GROUND_GAP = 50; // Minimum gap between bottom pipe and ground
 
   const jump = useCallback(() => {
@@ -60,14 +59,14 @@ const FlappyBird = () => {
 
   // Generate new pipe
   const generatePipe = useCallback(() => {
-    const minHeight = 100;
-    const maxHeight = GAME_HEIGHT - PIPE_GAP - minHeight - GROUND_HEIGHT - MIN_GROUND_GAP;
-    const height = Math.random() * (maxHeight - minHeight) + minHeight;
+    const minGapTop = 100; // Minimum distance from top
+    const maxGapTop = GAME_HEIGHT - PIPE_GAP - GROUND_HEIGHT - 100; // Maximum distance from top
+    const gapTop = Math.random() * (maxGapTop - minGapTop) + minGapTop;
     
     return {
       id: pipeIdRef.current++,
       x: GAME_WIDTH,
-      height,
+      height: gapTop, // This represents where the gap starts (top pipe height)
       passed: false
     };
   }, []);
@@ -202,11 +201,11 @@ const FlappyBird = () => {
         </div>
 
         {/* Ground */}
-        <div className="absolute bottom-0 w-full h-20 bg-gradient-to-t from-green-600 to-green-400"></div>
+        <div className="absolute bottom-0 w-full bg-gradient-to-t from-green-600 to-green-400" style={{ height: GROUND_HEIGHT }}></div>
         
         {/* Pipes */}
         {pipes.map(pipe => (
-          <Pipe key={pipe.id} x={pipe.x} height={pipe.height} gap={PIPE_GAP} groundHeight={GROUND_HEIGHT} />
+          <Pipe key={pipe.id} x={pipe.x} height={pipe.height} gap={PIPE_GAP} groundHeight={GROUND_HEIGHT} gameHeight={GAME_HEIGHT} />
         ))}
         
         {/* Bird */}
