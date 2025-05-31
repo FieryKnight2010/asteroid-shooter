@@ -10,6 +10,9 @@ interface PipeProps {
 }
 
 const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight }) => {
+  // Calculate bottom pipe height more safely
+  const bottomPipeHeight = Math.max(0, gameHeight - height - gap - groundHeight);
+  
   return (
     <div className="absolute" style={{ left: `${x}px` }}>
       {/* Top pipe - extends from top to gap start */}
@@ -25,18 +28,20 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight })
         <div className="absolute bottom-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-b-2 border-green-800"></div>
       </div>
       
-      {/* Bottom pipe - extends from gap end to ground */}
-      <div 
-        className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
-        style={{
-          width: '80px',
-          height: `${gameHeight - height - gap - groundHeight}px`,
-          top: `${height + gap}px`,
-        }}
-      >
-        {/* Pipe cap at top */}
-        <div className="absolute top-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-t-2 border-green-800"></div>
-      </div>
+      {/* Bottom pipe - only render if height is positive */}
+      {bottomPipeHeight > 0 && (
+        <div 
+          className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
+          style={{
+            width: '80px',
+            height: `${bottomPipeHeight}px`,
+            top: `${height + gap}px`,
+          }}
+        >
+          {/* Pipe cap at top */}
+          <div className="absolute top-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-t-2 border-green-800"></div>
+        </div>
+      )}
     </div>
   );
 };

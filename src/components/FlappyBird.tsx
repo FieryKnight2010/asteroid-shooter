@@ -25,14 +25,13 @@ const FlappyBird = () => {
   
   const BIRD_SIZE = 40;
   const PIPE_WIDTH = 80;
-  const PIPE_GAP = 150; // Reduced from 180 to make it more challenging
+  const PIPE_GAP = 150;
   const GRAVITY = 0.6;
-  const JUMP_STRENGTH = -8; // Reduced from -12 to make jumps less powerful
+  const JUMP_STRENGTH = -8;
   const PIPE_SPEED = 3;
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 600;
   const GROUND_HEIGHT = 80;
-  const MIN_GROUND_GAP = 50; // Minimum gap between bottom pipe and ground
 
   const jump = useCallback(() => {
     if (!gameStarted && !gameOver) {
@@ -59,38 +58,49 @@ const FlappyBird = () => {
 
   // Generate new pipe
   const generatePipe = useCallback(() => {
-    const minGapTop = 100; // Minimum distance from top
-    const maxGapTop = GAME_HEIGHT - PIPE_GAP - GROUND_HEIGHT - 100; // Maximum distance from top
+    const minGapTop = 100;
+    const maxGapTop = GAME_HEIGHT - PIPE_GAP - GROUND_HEIGHT - 100;
     const gapTop = Math.random() * (maxGapTop - minGapTop) + minGapTop;
     
     return {
       id: pipeIdRef.current++,
       x: GAME_WIDTH,
-      height: gapTop, // This represents where the gap starts (top pipe height)
+      height: gapTop,
       passed: false
     };
   }, []);
 
-  // Collision detection
+  // Collision detection - Fixed to check actual pipe boundaries
   const checkCollision = useCallback((birdY: number, pipes: Pipe[]) => {
-    // Ground and ceiling collision
-    if (birdY < 0 || birdY + BIRD_SIZE > GAME_HEIGHT) {
+    // Ground collision
+    if (birdY + BIRD_SIZE > GAME_HEIGHT - GROUND_HEIGHT) {
+      return true;
+    }
+    
+    // Ceiling collision
+    if (birdY < 0) {
       return true;
     }
 
-    // Pipe collision
+    // Pipe collision - check each pipe
     for (const pipe of pipes) {
       const birdLeft = GAME_WIDTH / 2 - BIRD_SIZE / 2;
       const birdRight = GAME_WIDTH / 2 + BIRD_SIZE / 2;
       const birdTop = birdY;
       const birdBottom = birdY + BIRD_SIZE;
 
-      if (
-        birdRight > pipe.x &&
-        birdLeft < pipe.x + PIPE_WIDTH &&
-        (birdTop < pipe.height || birdBottom > pipe.height + PIPE_GAP)
-      ) {
-        return true;
+      // Check if bird is horizontally aligned with pipe
+      if (birdRight > pipe.x && birdLeft < pipe.x + PIPE_WIDTH) {
+        // Check collision with top pipe (from 0 to pipe.height)
+        if (birdTop < pipe.height) {
+          return true;
+        }
+        
+        // Check collision with bottom pipe (from pipe.height + gap to ground)
+        const bottomPipeTop = pipe.height + PIPE_GAP;
+        if (birdBottom > bottomPipeTop) {
+          return true;
+        }
       }
     }
 
@@ -122,7 +132,7 @@ const FlappyBird = () => {
 
         // Check for score
         newPipes.forEach(pipe => {
-          if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME_WIDTH / 2) {
+          if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME_WIDTH / 2 - BIRD_SIZE / 2) {
             pipe.passed = true;
             setScore(prevScore => {
               const newScore = prevScore + 1;
@@ -160,6 +170,26 @@ const FlappyBird = () => {
       }
     }
   }, [birdY, pipes, gameStarted, gameOver, checkCollision]);
+
+  // Score checking - separate effect for better control
+  useEffect(() => {
+    if (gameStarted && !gameOver) {
+      pipes.forEach(pipe => {
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME_WIDTH / 2 - BIRD_SIZE / 2) {
+          pipe.passed = true;
+          setScore(prevScore => {
+            const newScore = prevScore + 1;
+            if (newScore % 5 === 0) {
+              toast(`Great job! Score: ${newScore}`, {
+                duration: 1000,
+              });
+            }
+            return newScore;
+          });
+        }
+      });
+    }
+  }, [pipes, gameStarted, gameOver]);
 
   // Keyboard controls
   useEffect(() => {
