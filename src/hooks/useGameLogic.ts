@@ -50,43 +50,58 @@ export const useGameLogic = () => {
   }, []);
 
   const generatePipe = useCallback((): Pipe => {
-    const minGapTop = 100;
-    const maxGapTop = GAME_CONSTANTS.GAME_HEIGHT - GAME_CONSTANTS.PIPE_GAP - GAME_CONSTANTS.GROUND_HEIGHT - 100;
-    const gapTop = Math.random() * (maxGapTop - minGapTop) + minGapTop;
+    // Add more randomization with different ranges for variety
+    const GAP_SIZE_MIN = 120;
+    const GAP_SIZE_MAX = 180;
+    const GAP_TOP_MIN = 80;
+    const GAP_TOP_MAX = GAME_CONSTANTS.GAME_HEIGHT - GAME_CONSTANTS.GROUND_HEIGHT - GAP_SIZE_MAX - 80;
+    
+    const gapSize = Math.random() * (GAP_SIZE_MAX - GAP_SIZE_MIN) + GAP_SIZE_MIN;
+    const gapTop = Math.random() * (GAP_TOP_MAX - GAP_TOP_MIN) + GAP_TOP_MIN;
+    
+    console.log(`Generated pipe ${pipeIdRef.current}: gapTop=${gapTop}, gapSize=${gapSize}`);
     
     return {
       id: pipeIdRef.current++,
       x: GAME_CONSTANTS.GAME_WIDTH,
       height: gapTop,
-      passed: false
+      passed: false,
+      gapSize: gapSize // Add gap size to pipe data
     };
   }, []);
 
   const checkCollision = useCallback((birdY: number, pipes: Pipe[]) => {
     // Ground collision
     if (birdY + GAME_CONSTANTS.BIRD_SIZE > GAME_CONSTANTS.GAME_HEIGHT - GAME_CONSTANTS.GROUND_HEIGHT) {
+      console.log("Ground collision detected");
       return true;
     }
     
     // Ceiling collision
     if (birdY < 0) {
+      console.log("Ceiling collision detected");
       return true;
     }
 
-    // Pipe collision
-    for (const pipe of pipes) {
-      const birdLeft = GAME_CONSTANTS.GAME_WIDTH / 2 - GAME_CONSTANTS.BIRD_SIZE / 2;
-      const birdRight = GAME_CONSTANTS.GAME_WIDTH / 2 + GAME_CONSTANTS.BIRD_SIZE / 2;
-      const birdTop = birdY;
-      const birdBottom = birdY + GAME_CONSTANTS.BIRD_SIZE;
+    // Bird position
+    const birdLeft = GAME_CONSTANTS.GAME_WIDTH / 2 - GAME_CONSTANTS.BIRD_SIZE / 2;
+    const birdRight = GAME_CONSTANTS.GAME_WIDTH / 2 + GAME_CONSTANTS.BIRD_SIZE / 2;
+    const birdTop = birdY;
+    const birdBottom = birdY + GAME_CONSTANTS.BIRD_SIZE;
 
-      if (birdRight > pipe.x && birdLeft < pipe.x + GAME_CONSTANTS.PIPE_WIDTH) {
-        if (birdTop < pipe.height) {
-          return true;
-        }
+    // Pipe collision - more precise detection
+    for (const pipe of pipes) {
+      const pipeLeft = pipe.x;
+      const pipeRight = pipe.x + GAME_CONSTANTS.PIPE_WIDTH;
+      
+      // Only check collision if bird overlaps horizontally with pipe
+      if (birdRight > pipeLeft && birdLeft < pipeRight) {
+        const topPipeBottom = pipe.height;
+        const bottomPipeTop = pipe.height + (pipe.gapSize || GAME_CONSTANTS.PIPE_GAP);
         
-        const bottomPipeTop = pipe.height + GAME_CONSTANTS.PIPE_GAP;
-        if (birdBottom > bottomPipeTop) {
+        // Check if bird hits top pipe or bottom pipe
+        if (birdTop < topPipeBottom || birdBottom > bottomPipeTop) {
+          console.log(`Pipe collision: bird(${birdTop}-${birdBottom}) vs pipes(top:0-${topPipeBottom}, bottom:${bottomPipeTop}-ground)`);
           return true;
         }
       }

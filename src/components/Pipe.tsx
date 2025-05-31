@@ -7,15 +7,17 @@ interface PipeProps {
   gap: number;
   groundHeight: number;
   gameHeight: number;
+  gapSize?: number; // Accept custom gap size
 }
 
-const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight }) => {
-  // Calculate bottom pipe height more safely
-  const bottomPipeHeight = Math.max(0, gameHeight - height - gap - groundHeight);
+const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight, gapSize }) => {
+  // Use custom gap size if provided, otherwise fall back to default
+  const actualGapSize = gapSize || gap;
+  const bottomPipeHeight = Math.max(0, gameHeight - height - actualGapSize - groundHeight);
   
   return (
     <div className="absolute" style={{ left: `${x}px` }}>
-      {/* Top pipe - extends from top to gap start */}
+      {/* Top pipe */}
       <div 
         className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
         style={{
@@ -24,21 +26,19 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight })
           top: 0,
         }}
       >
-        {/* Pipe cap at bottom */}
         <div className="absolute bottom-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-b-2 border-green-800"></div>
       </div>
       
-      {/* Bottom pipe - only render if height is positive */}
+      {/* Bottom pipe */}
       {bottomPipeHeight > 0 && (
         <div 
           className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
           style={{
             width: '80px',
             height: `${bottomPipeHeight}px`,
-            top: `${height + gap}px`,
+            top: `${height + actualGapSize}px`,
           }}
         >
-          {/* Pipe cap at top */}
           <div className="absolute top-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-t-2 border-green-800"></div>
         </div>
       )}

@@ -33,17 +33,20 @@ export const useGameLoop = ({
           x: pipe.x - GAME_CONSTANTS.PIPE_SPEED
         })).filter(pipe => pipe.x + GAME_CONSTANTS.PIPE_WIDTH > 0);
 
-        // Add new pipe
+        // Add new pipe when needed
         if (newPipes.length === 0 || newPipes[newPipes.length - 1].x < GAME_CONSTANTS.GAME_WIDTH - 300) {
           newPipes.push(generatePipe());
         }
 
-        // Check for score
+        // Check for score - only when bird center completely passes pipe right edge
         let newScore = prev.score;
+        const birdCenterX = GAME_CONSTANTS.GAME_WIDTH / 2;
+        
         newPipes.forEach(pipe => {
-          if (!pipe.passed && pipe.x + GAME_CONSTANTS.PIPE_WIDTH < GAME_CONSTANTS.GAME_WIDTH / 2 - GAME_CONSTANTS.BIRD_SIZE / 2) {
+          if (!pipe.passed && birdCenterX > pipe.x + GAME_CONSTANTS.PIPE_WIDTH) {
             pipe.passed = true;
             newScore += 1;
+            console.log(`Score! Bird center (${birdCenterX}) passed pipe right edge (${pipe.x + GAME_CONSTANTS.PIPE_WIDTH})`);
             if (newScore % 5 === 0) {
               toast(`Great job! Score: ${newScore}`, {
                 duration: 1000,

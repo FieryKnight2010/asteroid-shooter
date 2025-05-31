@@ -57,7 +57,8 @@ const FlappyBird = () => {
             key={pipe.id} 
             x={pipe.x} 
             height={pipe.height} 
-            gap={GAME_CONSTANTS.PIPE_GAP} 
+            gap={GAME_CONSTANTS.PIPE_GAP}
+            gapSize={pipe.gapSize}
             groundHeight={GAME_CONSTANTS.GROUND_HEIGHT} 
             gameHeight={GAME_CONSTANTS.GAME_HEIGHT} 
           />
