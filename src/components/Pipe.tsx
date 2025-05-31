@@ -13,7 +13,8 @@ interface PipeProps {
 const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight, gapSize }) => {
   // Use custom gap size if provided, otherwise fall back to default
   const actualGapSize = gapSize || gap;
-  const bottomPipeHeight = Math.max(0, gameHeight - height - actualGapSize - groundHeight);
+  const bottomPipeTop = height + actualGapSize;
+  const bottomPipeHeight = gameHeight - bottomPipeTop - groundHeight;
   
   return (
     <div className="absolute" style={{ left: `${x}px` }}>
@@ -36,7 +37,7 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight, g
           style={{
             width: '80px',
             height: `${bottomPipeHeight}px`,
-            top: `${height + actualGapSize}px`,
+            top: `${bottomPipeTop}px`,
           }}
         >
           <div className="absolute top-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-t-2 border-green-800"></div>
