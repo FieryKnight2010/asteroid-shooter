@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Bird from './Bird';
 import Pipe from './Pipe';
@@ -32,6 +31,8 @@ const FlappyBird = () => {
   const PIPE_SPEED = 3;
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 600;
+  const GROUND_HEIGHT = 20;
+  const MIN_GROUND_GAP = 50; // Minimum gap between bottom pipe and ground
 
   const jump = useCallback(() => {
     if (!gameStarted && !gameOver) {
@@ -59,7 +60,7 @@ const FlappyBird = () => {
   // Generate new pipe
   const generatePipe = useCallback(() => {
     const minHeight = 100;
-    const maxHeight = GAME_HEIGHT - PIPE_GAP - minHeight;
+    const maxHeight = GAME_HEIGHT - PIPE_GAP - minHeight - GROUND_HEIGHT - MIN_GROUND_GAP;
     const height = Math.random() * (maxHeight - minHeight) + minHeight;
     
     return {
@@ -204,7 +205,7 @@ const FlappyBird = () => {
         
         {/* Pipes */}
         {pipes.map(pipe => (
-          <Pipe key={pipe.id} x={pipe.x} height={pipe.height} gap={PIPE_GAP} />
+          <Pipe key={pipe.id} x={pipe.x} height={pipe.height} gap={PIPE_GAP} groundHeight={GROUND_HEIGHT} />
         ))}
         
         {/* Bird */}

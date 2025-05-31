@@ -5,9 +5,10 @@ interface PipeProps {
   x: number;
   height: number;
   gap: number;
+  groundHeight: number;
 }
 
-const Pipe: React.FC<PipeProps> = ({ x, height, gap }) => {
+const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight }) => {
   return (
     <div className="absolute" style={{ left: `${x}px` }}>
       {/* Top pipe */}
@@ -28,7 +29,7 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap }) => {
         className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
         style={{
           width: '80px',
-          height: `${600 - height - gap - 20}px`, // 20px for ground
+          height: `${600 - height - gap - groundHeight * 4}px`, // Use groundHeight * 4 for proper spacing
           top: `${height + gap}px`,
         }}
       >
