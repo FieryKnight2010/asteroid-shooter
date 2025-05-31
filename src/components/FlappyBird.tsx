@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Bird from './Bird';
 import Pipe from './Pipe';
@@ -25,9 +26,9 @@ const FlappyBird = () => {
   
   const BIRD_SIZE = 40;
   const PIPE_WIDTH = 80;
-  const PIPE_GAP = 180;
+  const PIPE_GAP = 150; // Reduced from 180 to make it more challenging
   const GRAVITY = 0.6;
-  const JUMP_STRENGTH = -12;
+  const JUMP_STRENGTH = -8; // Reduced from -12 to make jumps less powerful
   const PIPE_SPEED = 3;
   const GAME_WIDTH = 800;
   const GAME_HEIGHT = 600;
