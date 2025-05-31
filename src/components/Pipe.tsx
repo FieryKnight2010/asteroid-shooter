@@ -14,7 +14,7 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight, g
   // Use custom gap size if provided, otherwise fall back to default
   const actualGapSize = gapSize || gap;
   const bottomPipeTop = height + actualGapSize;
-  const bottomPipeHeight = gameHeight - bottomPipeTop - groundHeight;
+  const bottomPipeHeight = gameHeight - bottomPipeTop;
   
   return (
     <div className="absolute" style={{ left: `${x}px` }}>
