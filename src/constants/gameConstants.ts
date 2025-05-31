@@ -1,0 +1,12 @@
+
+export const GAME_CONSTANTS = {
+  BIRD_SIZE: 40,
+  PIPE_WIDTH: 80,
+  PIPE_GAP: 150,
+  GRAVITY: 0.6,
+  JUMP_STRENGTH: -8,
+  PIPE_SPEED: 3,
+  GAME_WIDTH: 800,
+  GAME_HEIGHT: 600,
+  GROUND_HEIGHT: 80,
+} as const;

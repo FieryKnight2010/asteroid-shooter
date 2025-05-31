@@ -1,215 +1,41 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+import React from 'react';
 import Bird from './Bird';
 import Pipe from './Pipe';
 import GameUI from './GameUI';
-import { toast } from 'sonner';
-
-interface Pipe {
-  id: number;
-  x: number;
-  height: number;
-  passed: boolean;
-}
+import GameBackground from './GameBackground';
+import { useGameLogic } from '../hooks/useGameLogic';
+import { useGameLoop } from '../hooks/useGameLoop';
+import { useKeyboardControls } from '../hooks/useKeyboardControls';
+import { GAME_CONSTANTS } from '../constants/gameConstants';
 
 const FlappyBird = () => {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-  const [score, setScore] = useState(0);
-  const [birdY, setBirdY] = useState(300);
-  const [birdVelocity, setBirdVelocity] = useState(0);
-  const [pipes, setPipes] = useState<Pipe[]>([]);
-  const [showInstructions, setShowInstructions] = useState(true);
-  
-  const gameLoopRef = useRef<number>();
-  const pipeIdRef = useRef(0);
-  
-  const BIRD_SIZE = 40;
-  const PIPE_WIDTH = 80;
-  const PIPE_GAP = 150;
-  const GRAVITY = 0.6;
-  const JUMP_STRENGTH = -8;
-  const PIPE_SPEED = 3;
-  const GAME_WIDTH = 800;
-  const GAME_HEIGHT = 600;
-  const GROUND_HEIGHT = 80;
+  const {
+    gameState,
+    setGameState,
+    jump,
+    resetGame,
+    generatePipe,
+    checkCollision,
+    gameLoopRef,
+  } = useGameLogic();
 
-  const jump = useCallback(() => {
-    if (!gameStarted && !gameOver) {
-      setGameStarted(true);
-      setShowInstructions(false);
-      toast("Game started! Tap to flap!");
-    }
-    
-    if (gameStarted && !gameOver) {
-      setBirdVelocity(JUMP_STRENGTH);
-    }
-  }, [gameStarted, gameOver]);
+  useGameLoop({
+    gameState,
+    setGameState,
+    generatePipe,
+    checkCollision,
+    gameLoopRef,
+  });
 
-  const resetGame = () => {
-    setGameStarted(false);
-    setGameOver(false);
-    setScore(0);
-    setBirdY(300);
-    setBirdVelocity(0);
-    setPipes([]);
-    setShowInstructions(true);
-    pipeIdRef.current = 0;
-  };
-
-  // Generate new pipe
-  const generatePipe = useCallback(() => {
-    const minGapTop = 100;
-    const maxGapTop = GAME_HEIGHT - PIPE_GAP - GROUND_HEIGHT - 100;
-    const gapTop = Math.random() * (maxGapTop - minGapTop) + minGapTop;
-    
-    return {
-      id: pipeIdRef.current++,
-      x: GAME_WIDTH,
-      height: gapTop,
-      passed: false
-    };
-  }, []);
-
-  // Collision detection - Fixed to check actual pipe boundaries
-  const checkCollision = useCallback((birdY: number, pipes: Pipe[]) => {
-    // Ground collision
-    if (birdY + BIRD_SIZE > GAME_HEIGHT - GROUND_HEIGHT) {
-      return true;
-    }
-    
-    // Ceiling collision
-    if (birdY < 0) {
-      return true;
-    }
-
-    // Pipe collision - check each pipe
-    for (const pipe of pipes) {
-      const birdLeft = GAME_WIDTH / 2 - BIRD_SIZE / 2;
-      const birdRight = GAME_WIDTH / 2 + BIRD_SIZE / 2;
-      const birdTop = birdY;
-      const birdBottom = birdY + BIRD_SIZE;
-
-      // Check if bird is horizontally aligned with pipe
-      if (birdRight > pipe.x && birdLeft < pipe.x + PIPE_WIDTH) {
-        // Check collision with top pipe (from 0 to pipe.height)
-        if (birdTop < pipe.height) {
-          return true;
-        }
-        
-        // Check collision with bottom pipe (from pipe.height + gap to ground)
-        const bottomPipeTop = pipe.height + PIPE_GAP;
-        if (birdBottom > bottomPipeTop) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }, []);
-
-  // Game loop
-  useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    const gameLoop = () => {
-      setBirdY(prevY => {
-        const newY = prevY + birdVelocity;
-        return newY;
-      });
-
-      setBirdVelocity(prevVelocity => prevVelocity + GRAVITY);
-
-      setPipes(prevPipes => {
-        let newPipes = prevPipes.map(pipe => ({
-          ...pipe,
-          x: pipe.x - PIPE_SPEED
-        })).filter(pipe => pipe.x + PIPE_WIDTH > 0);
-
-        // Add new pipe
-        if (newPipes.length === 0 || newPipes[newPipes.length - 1].x < GAME_WIDTH - 300) {
-          newPipes.push(generatePipe());
-        }
-
-        // Check for score
-        newPipes.forEach(pipe => {
-          if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME_WIDTH / 2 - BIRD_SIZE / 2) {
-            pipe.passed = true;
-            setScore(prevScore => {
-              const newScore = prevScore + 1;
-              if (newScore % 5 === 0) {
-                toast(`Great job! Score: ${newScore}`, {
-                  duration: 1000,
-                });
-              }
-              return newScore;
-            });
-          }
-        });
-
-        return newPipes;
-      });
-
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
-    };
-
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [gameStarted, gameOver, birdVelocity, generatePipe]);
-
-  // Collision checking
-  useEffect(() => {
-    if (gameStarted && !gameOver) {
-      if (checkCollision(birdY, pipes)) {
-        setGameOver(true);
-        toast.error("Game Over! Tap to play again");
-      }
-    }
-  }, [birdY, pipes, gameStarted, gameOver, checkCollision]);
-
-  // Score checking - separate effect for better control
-  useEffect(() => {
-    if (gameStarted && !gameOver) {
-      pipes.forEach(pipe => {
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME_WIDTH / 2 - BIRD_SIZE / 2) {
-          pipe.passed = true;
-          setScore(prevScore => {
-            const newScore = prevScore + 1;
-            if (newScore % 5 === 0) {
-              toast(`Great job! Score: ${newScore}`, {
-                duration: 1000,
-              });
-            }
-            return newScore;
-          });
-        }
-      });
-    }
-  }, [pipes, gameStarted, gameOver]);
-
-  // Keyboard controls
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        e.preventDefault();
-        if (gameOver) {
-          resetGame();
-        } else {
-          jump();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [jump, gameOver]);
+  useKeyboardControls({
+    jump,
+    resetGame,
+    gameOver: gameState.gameOver,
+  });
 
   const handleClick = () => {
-    if (gameOver) {
+    if (gameState.gameOver) {
       resetGame();
     } else {
       jump();
@@ -220,38 +46,37 @@ const FlappyBird = () => {
     <div className="relative">
       <div 
         className="relative bg-gradient-to-b from-sky-400 to-sky-300 border-4 border-sky-600 rounded-lg shadow-2xl cursor-pointer overflow-hidden"
-        style={{ width: GAME_WIDTH, height: GAME_HEIGHT }}
+        style={{ width: GAME_CONSTANTS.GAME_WIDTH, height: GAME_CONSTANTS.GAME_HEIGHT }}
         onClick={handleClick}
       >
-        {/* Background clouds */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-16 h-10 bg-white rounded-full opacity-70 animate-pulse"></div>
-          <div className="absolute top-40 right-20 w-20 h-12 bg-white rounded-full opacity-60 animate-pulse delay-300"></div>
-          <div className="absolute top-60 left-32 w-12 h-8 bg-white rounded-full opacity-50 animate-pulse delay-700"></div>
-        </div>
-
-        {/* Ground */}
-        <div className="absolute bottom-0 w-full bg-gradient-to-t from-green-600 to-green-400" style={{ height: GROUND_HEIGHT }}></div>
+        <GameBackground />
         
         {/* Pipes */}
-        {pipes.map(pipe => (
-          <Pipe key={pipe.id} x={pipe.x} height={pipe.height} gap={PIPE_GAP} groundHeight={GROUND_HEIGHT} gameHeight={GAME_HEIGHT} />
+        {gameState.pipes.map(pipe => (
+          <Pipe 
+            key={pipe.id} 
+            x={pipe.x} 
+            height={pipe.height} 
+            gap={GAME_CONSTANTS.PIPE_GAP} 
+            groundHeight={GAME_CONSTANTS.GROUND_HEIGHT} 
+            gameHeight={GAME_CONSTANTS.GAME_HEIGHT} 
+          />
         ))}
         
         {/* Bird */}
         <Bird 
-          y={birdY} 
-          velocity={birdVelocity}
-          gameStarted={gameStarted}
-          gameOver={gameOver}
+          y={gameState.birdY} 
+          velocity={gameState.birdVelocity}
+          gameStarted={gameState.gameStarted}
+          gameOver={gameState.gameOver}
         />
         
         {/* Game UI */}
         <GameUI 
-          score={score}
-          gameStarted={gameStarted}
-          gameOver={gameOver}
-          showInstructions={showInstructions}
+          score={gameState.score}
+          gameStarted={gameState.gameStarted}
+          gameOver={gameState.gameOver}
+          showInstructions={gameState.showInstructions}
           onRestart={resetGame}
         />
       </div>
