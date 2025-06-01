@@ -30,9 +30,14 @@ export interface Asteroid {
   size: 'large' | 'medium' | 'small';
   rotation: number;
   rotationSpeed: number;
-  type: 'normal' | 'fast' | 'armored' | 'explosive';
+  type: 'normal' | 'fast' | 'armored' | 'explosive' | 'rapidFire' | 'shield' | 'extraLife';
   health: number;
   maxHealth: number;
+}
+
+export interface PowerupState {
+  rapidFire: number; // frames remaining
+  shield: number; // frames remaining
 }
 
 export interface GameState {
@@ -45,6 +50,7 @@ export interface GameState {
   gameOver: boolean;
   gameStarted: boolean;
   paused: boolean;
+  powerups: PowerupState;
 }
 
 export interface Controls {

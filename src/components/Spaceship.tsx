@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Spaceship as SpaceshipType } from '../types/asteroidGame';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
@@ -5,9 +6,10 @@ import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 interface SpaceshipProps {
   spaceship: SpaceshipType;
   isThrusting: boolean;
+  hasShield?: boolean;
 }
 
-const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
+const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield = false }) => {
   const { position, rotation } = spaceship;
   const size = GAME_CONSTANTS.SPACESHIP_SIZE;
 
@@ -23,6 +25,20 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
         filter: 'drop-shadow(0 0 6px rgba(0, 255, 255, 0.4))',
       }}
     >
+      {/* Shield effect */}
+      {hasShield && (
+        <div
+          className="absolute inset-0 rounded-full border-2 border-cyan-400 animate-pulse"
+          style={{
+            width: size * 1.8,
+            height: size * 1.8,
+            left: -size * 0.4,
+            top: -size * 0.4,
+            boxShadow: '0 0 15px rgba(0, 255, 255, 0.6)',
+          }}
+        />
+      )}
+      
       <div className="relative w-full h-full">
         <svg width={size} height={size} viewBox="0 0 24 24">
           {/* Thrust flames */}

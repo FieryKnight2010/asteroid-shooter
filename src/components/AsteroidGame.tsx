@@ -73,6 +73,7 @@ const AsteroidGame = () => {
             <Spaceship 
               spaceship={gameState.spaceship}
               isThrusting={controls.thrust}
+              hasShield={gameState.powerups.shield > 0}
             />
           </div>
         )}
@@ -103,6 +104,9 @@ const AsteroidGame = () => {
         <p>WASD: Move • Space: Shoot • P: Pause</p>
         <p className="text-xs mt-1">
           Asteroid types: Green=Fast, Gray=Armored (3 hits), Orange=Explosive
+        </p>
+        <p className="text-xs mt-1">
+          Powerups: Yellow=Rapid Fire, Cyan=Shield, Pink=Extra Life
         </p>
       </div>
     </div>

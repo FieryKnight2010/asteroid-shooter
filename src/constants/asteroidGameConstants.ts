@@ -1,5 +1,4 @@
 
-
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 800,
   CANVAS_HEIGHT: 600,
@@ -34,7 +33,16 @@ export const GAME_CONSTANTS = {
     normal: { health: 1, speedMultiplier: 1, points: 1 },
     fast: { health: 1, speedMultiplier: 1.5, points: 2 },
     armored: { health: 3, speedMultiplier: 0.7, points: 3 },
-    explosive: { health: 1, speedMultiplier: 1.1, points: 2 }
+    explosive: { health: 1, speedMultiplier: 1.1, points: 2 },
+    rapidFire: { health: 1, speedMultiplier: 0.8, points: 5 },
+    shield: { health: 1, speedMultiplier: 0.8, points: 5 },
+    extraLife: { health: 1, speedMultiplier: 0.8, points: 5 }
+  },
+  
+  // Powerup durations (in frames)
+  POWERUP_DURATIONS: {
+    rapidFire: 600, // 10 seconds at 60fps
+    shield: 480, // 8 seconds at 60fps
   },
   
   // Game progression
@@ -56,4 +64,3 @@ export const GAME_CONSTANTS = {
   // Explosion
   EXPLOSION_RADIUS: 100,
 } as const;
-
