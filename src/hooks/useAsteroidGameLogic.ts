@@ -13,30 +13,22 @@ const createInitialSpaceship = (): Spaceship => ({
   isThrusting: false,
 });
 
-const createInitialGameState = (level: number = 1): GameState => ({
+const createInitialGameState = (): GameState => ({
   spaceship: createInitialSpaceship(),
   bullets: [],
   asteroids: [],
   score: 0,
-  level,
-  lives: GAME_CONSTANTS.LIVES_PER_LEVEL,
+  level: 1,
+  lives: GAME_CONSTANTS.INITIAL_LIVES,
   gameOver: false,
   gameStarted: false,
   paused: false,
 });
 
-// Calculate score needed for each level (exponential growth)
-const getScoreForLevel = (level: number): number => {
-  return level * 1000; // 1000 points per level
-};
-
 export const useAsteroidGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [isInvulnerable, setIsInvulnerable] = useState(false);
   const [spaceshipVisible, setSpaceshipVisible] = useState(true);
-  const [selectedLevel, setSelectedLevel] = useState(1);
-  const [unlockedLevels, setUnlockedLevels] = useState(1);
-  const [showLevelSelector, setShowLevelSelector] = useState(false);
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
@@ -101,32 +93,18 @@ export const useAsteroidGameLogic = () => {
     });
   }, [respawnSpaceship]);
 
-  const getAvailableAsteroidTypes = (level: number): Asteroid['type'][] => {
-    const types: Asteroid['type'][] = [];
-    
-    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.normal) types.push('normal');
-    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.fast) types.push('fast');
-    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.armored) types.push('armored');
-    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.explosive) types.push('explosive');
-    
-    return types;
-  };
-
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
     const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
-    const levelSpeedMultiplier = 1 + (gameState.level - 1) * GAME_CONSTANTS.SPEED_INCREASE_PER_LEVEL;
-    const timeSpeedMultiplier = 1 + (timeElapsed * 0.05);
+    const speedMultiplier = 1 + (timeElapsed * 0.05);
     
-    // Only use asteroid types available for the current level
-    const availableTypes = getAvailableAsteroidTypes(gameState.level);
-    const asteroidType = type || availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    const asteroidType = type || (['normal', 'fast', 'armored', 'explosive'][Math.floor(Math.random() * 4)] as Asteroid['type']);
     const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroidType];
     
     const speed = GAME_CONSTANTS.ASTEROID_SPEEDS[size];
     const angle = Math.random() * Math.PI * 2;
     const baseVelocity = Math.random() * (speed.max - speed.min) + speed.min;
-    const finalVelocity = baseVelocity * timeSpeedMultiplier * typeData.speedMultiplier * levelSpeedMultiplier;
+    const finalVelocity = baseVelocity * speedMultiplier * typeData.speedMultiplier;
     
     return {
       id: asteroidIdRef.current++,
@@ -177,19 +155,13 @@ export const useAsteroidGameLogic = () => {
 
       const currentTime = Date.now();
       const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
-      const levelSpawnMultiplier = 1 + (prev.level - 1) * 0.2;
       const baseSpawnRate = 180;
-      const minSpawnRate = 20;
-      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - (timeElapsed * 2) - (prev.level * 10));
-
-      const maxAsteroidsForLevel = Math.min(
-        GAME_CONSTANTS.MAX_ASTEROIDS,
-        GAME_CONSTANTS.BASE_ASTEROIDS + (prev.level - 1) * GAME_CONSTANTS.ASTEROIDS_PER_LEVEL
-      );
+      const minSpawnRate = 30;
+      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 2);
 
       spawnTimerRef.current++;
       
-      if (spawnTimerRef.current >= spawnRate && prev.asteroids.length < maxAsteroidsForLevel) {
+      if (spawnTimerRef.current >= spawnRate) {
         spawnTimerRef.current = 0;
         const newAsteroid = createRandomAsteroid();
         
@@ -203,52 +175,17 @@ export const useAsteroidGameLogic = () => {
     });
   }, []);
 
-  // New score-based level progression check
-  const checkLevelProgression = useCallback(() => {
-    setGameState(prev => {
-      const requiredScore = getScoreForLevel(prev.level);
-      
-      if (prev.score >= requiredScore && prev.level < GAME_CONSTANTS.MAX_LEVELS) {
-        const nextLevel = prev.level + 1;
-        
-        // Unlock next level if not already unlocked
-        setUnlockedLevels(current => Math.max(current, nextLevel));
-        
-        toast.success(`Level ${prev.level} Complete! Score: ${prev.score}/${requiredScore}. Moving to Level ${nextLevel}`);
-        
-        // Continue with same lives but new level
-        return {
-          ...prev,
-          level: nextLevel,
-          asteroids: [createRandomAsteroid()], // Start new level with one asteroid
-        };
-      } else if (prev.score >= getScoreForLevel(GAME_CONSTANTS.MAX_LEVELS) && prev.level >= GAME_CONSTANTS.MAX_LEVELS) {
-        // Game completed!
-        toast.success('Congratulations! You completed all levels!');
-        return {
-          ...prev,
-          gameOver: true,
-        };
-      }
-      
-      return prev;
-    });
-  }, []);
-
-  const startGame = useCallback((level?: number) => {
-    const gameLevel = level || selectedLevel;
-    const newGameState = createInitialGameState(gameLevel);
+  const startGame = useCallback(() => {
+    const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
     newGameState.asteroids = [createRandomAsteroid()];
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
     setGameState(newGameState);
-    setSelectedLevel(gameLevel);
     setIsInvulnerable(false);
     setSpaceshipVisible(true);
-    setShowLevelSelector(false);
-    toast.success(`Level ${gameLevel} started! Score needed: ${getScoreForLevel(gameLevel)}`);
-  }, [selectedLevel]);
+    toast.success("Game started! Destroy the asteroids!");
+  }, []);
 
   const restartGame = useCallback(() => {
     if (respawnTimerRef.current) {
@@ -257,21 +194,8 @@ export const useAsteroidGameLogic = () => {
     if (invulnerabilityTimerRef.current) {
       clearTimeout(invulnerabilityTimerRef.current);
     }
-    startGame(selectedLevel);
-  }, [startGame, selectedLevel]);
-
-  const selectLevel = useCallback((level: number) => {
-    setSelectedLevel(level);
-    startGame(level);
+    startGame();
   }, [startGame]);
-
-  const showLevelMenu = useCallback(() => {
-    setShowLevelSelector(true);
-  }, []);
-
-  const hideLevelMenu = useCallback(() => {
-    setShowLevelSelector(false);
-  }, []);
 
   const pauseGame = useCallback(() => {
     setGameState(prev => ({ ...prev, paused: !prev.paused }));
@@ -407,8 +331,7 @@ export const useAsteroidGameLogic = () => {
     }));
     
     spawnAsteroid();
-    checkLevelProgression(); // Check for score-based level progression
-  }, [spawnAsteroid, checkLevelProgression]);
+  }, [spawnAsteroid]);
 
   const checkCollisions = useCallback((createExplosion?: (x: number, y: number, color?: string, count?: number) => void) => {
     setGameState(prev => {
@@ -505,15 +428,12 @@ export const useAsteroidGameLogic = () => {
         handleSpaceshipHit();
       }
 
-      // Return updated state
-      const updatedState = {
+      return {
         ...prev,
         bullets: newBullets,
         asteroids: newAsteroids,
         score: newScore,
       };
-
-      return updatedState;
     });
   }, [isInvulnerable, spaceshipVisible, handleSpaceshipHit]);
 
@@ -521,9 +441,6 @@ export const useAsteroidGameLogic = () => {
     gameState,
     isInvulnerable,
     spaceshipVisible,
-    selectedLevel,
-    unlockedLevels,
-    showLevelSelector,
     startGame,
     restartGame,
     pauseGame,
@@ -532,10 +449,6 @@ export const useAsteroidGameLogic = () => {
     updateBullets,
     updateAsteroids,
     checkCollisions,
-    selectLevel,
-    showLevelMenu,
-    hideLevelMenu,
     gameLoopRef,
-    getScoreForLevel, // Export this for UI components
   };
 };

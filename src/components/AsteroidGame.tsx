@@ -8,7 +8,6 @@ import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
 import AsteroidGameUI from './AsteroidGameUI';
-import LevelSelector from './LevelSelector';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
@@ -18,9 +17,6 @@ const AsteroidGame = () => {
     gameState,
     isInvulnerable,
     spaceshipVisible,
-    selectedLevel,
-    unlockedLevels,
-    showLevelSelector,
     startGame,
     restartGame,
     pauseGame,
@@ -29,11 +25,7 @@ const AsteroidGame = () => {
     updateBullets,
     updateAsteroids,
     checkCollisions,
-    selectLevel,
-    showLevelMenu,
-    hideLevelMenu,
     gameLoopRef,
-    getScoreForLevel,
   } = useAsteroidGameLogic();
 
   const { particles, createExplosion, createTrail, updateParticles } = useParticleSystem();
@@ -98,35 +90,19 @@ const AsteroidGame = () => {
         {/* Particle Effects */}
         <ParticleEffect particles={particles} />
         
-        {/* Level Selector */}
-        {showLevelSelector && (
-          <LevelSelector
-            currentLevel={selectedLevel}
-            unlockedLevels={unlockedLevels}
-            onLevelSelect={selectLevel}
-            onBack={hideLevelMenu}
-            getScoreForLevel={getScoreForLevel}
-          />
-        )}
-        
         {/* Game UI */}
-        {!showLevelSelector && (
-          <AsteroidGameUI 
-            gameState={gameState}
-            selectedLevel={selectedLevel}
-            onStart={startGame}
-            onRestart={restartGame}
-            onShowLevelMenu={showLevelMenu}
-            getScoreForLevel={getScoreForLevel}
-          />
-        )}
+        <AsteroidGameUI 
+          gameState={gameState}
+          onStart={startGame}
+          onRestart={restartGame}
+        />
       </div>
       
       {/* Controls info */}
       <div className="mt-4 text-white text-center text-sm">
         <p>WASD: Move • Space: Shoot • P: Pause</p>
         <p className="text-xs mt-1">
-          Levels progress by score: Fast (L8), Armored (L15), Explosive (L22)
+          Asteroid types: Green=Fast, Gray=Armored (3 hits), Orange=Explosive
         </p>
       </div>
     </div>

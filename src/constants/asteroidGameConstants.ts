@@ -32,34 +32,23 @@ export const GAME_CONSTANTS = {
   // Asteroid types
   ASTEROID_TYPES: {
     normal: { health: 1, speedMultiplier: 1, points: 1 },
-    fast: { health: 1, speedMultiplier: 2, points: 2 },
+    fast: { health: 1, speedMultiplier: 1.5, points: 2 },
     armored: { health: 3, speedMultiplier: 0.7, points: 3 },
     explosive: { health: 1, speedMultiplier: 1.1, points: 2 }
   },
   
   // Game progression
   INITIAL_LIVES: 3,
-  LIVES_PER_LEVEL: 3,
-  MAX_LEVELS: 30,
   POINTS: {
     large: 20,
     medium: 50,
     small: 100
   },
   
-  // Level progression - removed old system
-  BASE_ASTEROIDS: 3,
-  ASTEROIDS_PER_LEVEL: 1,
-  MAX_ASTEROIDS: 15,
-  SPEED_INCREASE_PER_LEVEL: 0.15,
-  
-  // Level-based asteroid type introduction
-  ASTEROID_TYPE_LEVELS: {
-    normal: 1,    // Available from level 1
-    fast: 8,      // Introduced at level 8
-    armored: 15,  // Introduced at level 15
-    explosive: 22 // Introduced at level 22
-  },
+  // Level progression
+  BASE_ASTEROIDS: 4,
+  ASTEROIDS_PER_LEVEL: 2,
+  MAX_ASTEROIDS: 12,
   
   // Physics
   WRAP_MARGIN: 50,
