@@ -9,7 +9,7 @@ interface SpaceshipProps {
 }
 
 const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
-  const { position, rotation } = spaceship;
+  const { position, rotation, shieldActive } = spaceship;
   const size = GAME_CONSTANTS.SPACESHIP_SIZE;
 
   return (
@@ -24,6 +24,22 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
         filter: 'drop-shadow(0 0 6px rgba(0, 255, 255, 0.4))',
       }}
     >
+      {/* Shield effect */}
+      {shieldActive && (
+        <div
+          className="absolute animate-pulse"
+          style={{
+            left: -10,
+            top: -10,
+            width: size + 20,
+            height: size + 20,
+            border: '2px solid #4444ff',
+            borderRadius: '50%',
+            boxShadow: '0 0 15px rgba(68, 68, 255, 0.8)',
+          }}
+        />
+      )}
+      
       <div className="relative w-full h-full">
         <svg width={size} height={size} viewBox="0 0 24 24">
           {/* Thrust flames */}
@@ -56,7 +72,6 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
             strokeWidth="0.5"
           />
           
-          {/* Ship wings */}
           <polygon
             points="8,8 4,12 6,14 9,12"
             fill="url(#wingGradient)"
@@ -70,7 +85,6 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
             strokeWidth="0.5"
           />
           
-          {/* Cockpit */}
           <ellipse
             cx="12"
             cy="7"
@@ -81,7 +95,6 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
             strokeWidth="0.5"
           />
           
-          {/* Cockpit window */}
           <ellipse
             cx="12"
             cy="6.5"
@@ -91,7 +104,6 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
             opacity="0.9"
           />
           
-          {/* Engine details */}
           <rect
             x="10.5"
             y="14"
@@ -103,15 +115,12 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
             strokeWidth="0.3"
           />
           
-          {/* Wing engines */}
           <circle cx="6" cy="13" r="1" fill="#ff4400" opacity="0.8" />
           <circle cx="18" cy="13" r="1" fill="#ff4400" opacity="0.8" />
           
-          {/* Navigation lights */}
           <circle cx="8" cy="10" r="0.5" fill="#ff0000" className="animate-pulse" />
           <circle cx="16" cy="10" r="0.5" fill="#00ff00" className="animate-pulse" />
           
-          {/* Hull details */}
           <line x1="12" y1="4" x2="12" y2="14" stroke="#66ddff" strokeWidth="0.5" opacity="0.7" />
           <line x1="10" y1="12" x2="14" y2="12" stroke="#66ddff" strokeWidth="0.3" opacity="0.5" />
           <line x1="10.5" y1="10" x2="13.5" y2="10" stroke="#66ddff" strokeWidth="0.3" opacity="0.5" />

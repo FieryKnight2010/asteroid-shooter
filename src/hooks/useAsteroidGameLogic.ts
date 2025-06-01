@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { GameState, Spaceship, Bullet, Asteroid, Position, Velocity } from '../types/asteroidGame';
+import { GameState, Spaceship, Bullet, Asteroid, PowerUp, Position, Velocity } from '../types/asteroidGame';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 
 const createInitialSpaceship = (): Spaceship => ({
@@ -11,18 +11,23 @@ const createInitialSpaceship = (): Spaceship => ({
   rotation: 0,
   velocity: { x: 0, y: 0 },
   isThrusting: false,
+  weaponType: 'normal',
+  shieldActive: false,
+  shieldDuration: 0,
 });
 
 const createInitialGameState = (): GameState => ({
   spaceship: createInitialSpaceship(),
   bullets: [],
   asteroids: [],
+  powerUps: [],
   score: 0,
   level: 1,
   lives: GAME_CONSTANTS.INITIAL_LIVES,
   gameOver: false,
   gameStarted: false,
   paused: false,
+  weaponUpgradeTimer: 0,
 });
 
 export const useAsteroidGameLogic = () => {
@@ -32,7 +37,9 @@ export const useAsteroidGameLogic = () => {
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
+  const powerUpIdRef = useRef(0);
   const spawnTimerRef = useRef(0);
+  const fireRateTimerRef = useRef(0);
   const gameStartTimeRef = useRef(0);
   const respawnTimerRef = useRef<NodeJS.Timeout>();
   const invulnerabilityTimerRef = useRef<NodeJS.Timeout>();
@@ -49,7 +56,7 @@ export const useAsteroidGameLogic = () => {
     }
     invulnerabilityTimerRef.current = setTimeout(() => {
       setIsInvulnerable(false);
-    }, 2000); // 2 seconds of invulnerability
+    }, 2000);
   }, []);
 
   const respawnSpaceship = useCallback(() => {
@@ -63,6 +70,18 @@ export const useAsteroidGameLogic = () => {
 
   const handleSpaceshipHit = useCallback(() => {
     setGameState(prev => {
+      if (prev.spaceship.shieldActive) {
+        toast.info("Shield absorbed the hit!");
+        return {
+          ...prev,
+          spaceship: {
+            ...prev.spaceship,
+            shieldActive: false,
+            shieldDuration: 0,
+          },
+        };
+      }
+
       const newLives = prev.lives - 1;
       
       if (newLives <= 0) {
@@ -75,16 +94,14 @@ export const useAsteroidGameLogic = () => {
       } else {
         toast.warning(`Hit! Lives remaining: ${newLives}`);
         
-        // Hide spaceship immediately
         setSpaceshipVisible(false);
         
-        // Schedule respawn after a brief delay
         if (respawnTimerRef.current) {
           clearTimeout(respawnTimerRef.current);
         }
         respawnTimerRef.current = setTimeout(() => {
           respawnSpaceship();
-        }, 1000); // 1 second delay before respawn
+        }, 1000);
         
         return {
           ...prev,
@@ -94,16 +111,34 @@ export const useAsteroidGameLogic = () => {
     });
   }, [respawnSpaceship]);
 
-  const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small'): Asteroid => {
-    // Calculate speed multiplier based on game time
+  const createPowerUp = (position: Position): PowerUp => {
+    const types: PowerUp['type'][] = ['rapidFire', 'shield', 'extraLife', 'spreadShot', 'laser'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    return {
+      id: powerUpIdRef.current++,
+      position,
+      velocity: {
+        x: (Math.random() - 0.5) * GAME_CONSTANTS.POWERUP_SPEED,
+        y: (Math.random() - 0.5) * GAME_CONSTANTS.POWERUP_SPEED,
+      },
+      type,
+      lifespan: GAME_CONSTANTS.POWERUP_LIFESPAN,
+    };
+  };
+
+  const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
-    const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000; // seconds
-    const speedMultiplier = 1 + (timeElapsed * 0.05); // 5% speed increase per second
+    const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
+    const speedMultiplier = 1 + (timeElapsed * 0.05);
+    
+    const asteroidType = type || (['normal', 'fast', 'armored', 'explosive'][Math.floor(Math.random() * 4)] as Asteroid['type']);
+    const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroidType];
     
     const speed = GAME_CONSTANTS.ASTEROID_SPEEDS[size];
     const angle = Math.random() * Math.PI * 2;
     const baseVelocity = Math.random() * (speed.max - speed.min) + speed.min;
-    const finalVelocity = baseVelocity * speedMultiplier;
+    const finalVelocity = baseVelocity * speedMultiplier * typeData.speedMultiplier;
     
     return {
       id: asteroidIdRef.current++,
@@ -115,7 +150,24 @@ export const useAsteroidGameLogic = () => {
       size,
       rotation: 0,
       rotationSpeed: (Math.random() - 0.5) * 0.1,
+      type: asteroidType,
+      health: typeData.health,
+      maxHealth: typeData.health,
     };
+  };
+
+  const createBossAsteroid = (): Asteroid => {
+    const edge = Math.floor(Math.random() * 4);
+    let position: Position;
+    
+    switch (edge) {
+      case 0: position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: -50 }; break;
+      case 1: position = { x: GAME_CONSTANTS.CANVAS_WIDTH + 50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT }; break;
+      case 2: position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: GAME_CONSTANTS.CANVAS_HEIGHT + 50 }; break;
+      default: position = { x: -50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT };
+    }
+    
+    return createAsteroid(position, 'large', 'boss');
   };
 
   const createRandomAsteroid = (): Asteroid => {
@@ -123,20 +175,12 @@ export const useAsteroidGameLogic = () => {
     let position: Position;
     
     switch (edge) {
-      case 0: // Top
-        position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: -50 };
-        break;
-      case 1: // Right
-        position = { x: GAME_CONSTANTS.CANVAS_WIDTH + 50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT };
-        break;
-      case 2: // Bottom
-        position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: GAME_CONSTANTS.CANVAS_HEIGHT + 50 };
-        break;
-      default: // Left
-        position = { x: -50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT };
+      case 0: position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: -50 }; break;
+      case 1: position = { x: GAME_CONSTANTS.CANVAS_WIDTH + 50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT }; break;
+      case 2: position = { x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH, y: GAME_CONSTANTS.CANVAS_HEIGHT + 50 }; break;
+      default: position = { x: -50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT };
     }
     
-    // Randomly select asteroid size with weighted probability
     const sizeRandom = Math.random();
     let size: 'large' | 'medium' | 'small';
     
@@ -157,20 +201,24 @@ export const useAsteroidGameLogic = () => {
         return prev;
       }
 
-      // Calculate spawn rate based on time elapsed
       const currentTime = Date.now();
-      const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000; // seconds
-      const baseSpawnRate = 180; // frames between spawns at start (3 seconds at 60fps)
-      const minSpawnRate = 30; // minimum frames between spawns (0.5 seconds at 60fps)
+      const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
+      const baseSpawnRate = 180;
+      const minSpawnRate = 30;
       const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 2);
 
       spawnTimerRef.current++;
       
       if (spawnTimerRef.current >= spawnRate) {
         spawnTimerRef.current = 0;
+        
+        // 10% chance to spawn boss after 30 seconds
+        const shouldSpawnBoss = timeElapsed > 30 && Math.random() < 0.1;
+        const newAsteroid = shouldSpawnBoss ? createBossAsteroid() : createRandomAsteroid();
+        
         return {
           ...prev,
-          asteroids: [...prev.asteroids, createRandomAsteroid()],
+          asteroids: [...prev.asteroids, newAsteroid],
         };
       }
 
@@ -181,7 +229,7 @@ export const useAsteroidGameLogic = () => {
   const startGame = useCallback(() => {
     const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
-    newGameState.asteroids = [createRandomAsteroid()]; // Start with one asteroid
+    newGameState.asteroids = [createRandomAsteroid()];
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
     setGameState(newGameState);
@@ -210,25 +258,56 @@ export const useAsteroidGameLogic = () => {
         return prev;
       }
 
+      const weapon = GAME_CONSTANTS.WEAPON_TYPES[prev.spaceship.weaponType];
+      
+      // Check fire rate
+      if (fireRateTimerRef.current < weapon.fireRate) {
+        fireRateTimerRef.current++;
+        return prev;
+      }
+      
+      fireRateTimerRef.current = 0;
+
       const { spaceship } = prev;
-      // Calculate bullet spawn position at the back of the spaceship (opposite direction)
       const backOffset = GAME_CONSTANTS.SPACESHIP_SIZE / 2;
       const bulletStartX = spaceship.position.x - Math.cos(spaceship.rotation) * backOffset;
       const bulletStartY = spaceship.position.y - Math.sin(spaceship.rotation) * backOffset;
       
-      const bullet: Bullet = {
-        id: bulletIdRef.current++,
-        position: { x: bulletStartX, y: bulletStartY },
-        velocity: {
-          x: Math.cos(spaceship.rotation) * GAME_CONSTANTS.BULLET_SPEED,
-          y: Math.sin(spaceship.rotation) * GAME_CONSTANTS.BULLET_SPEED,
-        },
-        lifespan: GAME_CONSTANTS.BULLET_LIFESPAN,
-      };
+      let newBullets: Bullet[] = [];
+
+      if (prev.spaceship.weaponType === 'spread') {
+        // Create 3 bullets in a spread pattern
+        for (let i = -1; i <= 1; i++) {
+          const spreadAngle = spaceship.rotation + (i * 0.3);
+          newBullets.push({
+            id: bulletIdRef.current++,
+            position: { x: bulletStartX, y: bulletStartY },
+            velocity: {
+              x: Math.cos(spreadAngle) * weapon.speed,
+              y: Math.sin(spreadAngle) * weapon.speed,
+            },
+            lifespan: GAME_CONSTANTS.BULLET_LIFESPAN,
+            type: prev.spaceship.weaponType,
+            damage: weapon.damage,
+          });
+        }
+      } else {
+        newBullets.push({
+          id: bulletIdRef.current++,
+          position: { x: bulletStartX, y: bulletStartY },
+          velocity: {
+            x: Math.cos(spaceship.rotation) * weapon.speed,
+            y: Math.sin(spaceship.rotation) * weapon.speed,
+          },
+          lifespan: GAME_CONSTANTS.BULLET_LIFESPAN,
+          type: prev.spaceship.weaponType,
+          damage: weapon.damage,
+        });
+      }
 
       return {
         ...prev,
-        bullets: [...prev.bullets, bullet],
+        bullets: [...prev.bullets, ...newBullets],
       };
     });
   }, []);
@@ -239,23 +318,19 @@ export const useAsteroidGameLogic = () => {
       let newRotation = spaceship.rotation;
       let newVelocity = { ...spaceship.velocity };
 
-      // Rotation
       if (controls.left) newRotation -= GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
       if (controls.right) newRotation += GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
 
-      // Forward/backward movement in the direction of pointing
       if (controls.thrust) {
         newVelocity.x += Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
         newVelocity.y += Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
       }
 
-      // Reverse thrust (S key)
       if (controls.reverse) {
         newVelocity.x -= Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
         newVelocity.y -= Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
       }
 
-      // Apply friction and speed limit
       newVelocity.x *= GAME_CONSTANTS.SPACESHIP_FRICTION;
       newVelocity.y *= GAME_CONSTANTS.SPACESHIP_FRICTION;
 
@@ -265,20 +340,33 @@ export const useAsteroidGameLogic = () => {
         newVelocity.y = (newVelocity.y / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
       }
 
-      // Update position
       const newPosition = {
         x: spaceship.position.x + newVelocity.x,
         y: spaceship.position.y + newVelocity.y,
       };
 
+      // Update timers
+      let newWeaponUpgradeTimer = Math.max(0, prev.weaponUpgradeTimer - 1);
+      let newShieldDuration = Math.max(0, spaceship.shieldDuration - 1);
+      let newWeaponType = spaceship.weaponType;
+      
+      if (newWeaponUpgradeTimer === 0 && spaceship.weaponType !== 'normal') {
+        newWeaponType = 'normal';
+        toast.info("Weapon upgrade expired");
+      }
+
       return {
         ...prev,
+        weaponUpgradeTimer: newWeaponUpgradeTimer,
         spaceship: {
           ...spaceship,
           position: wrapPosition(newPosition),
           rotation: newRotation,
           velocity: newVelocity,
           isThrusting: controls.thrust,
+          weaponType: newWeaponType,
+          shieldActive: newShieldDuration > 0,
+          shieldDuration: newShieldDuration,
         },
       };
     });
@@ -313,15 +401,33 @@ export const useAsteroidGameLogic = () => {
       })),
     }));
     
-    // Spawn new asteroids
     spawnAsteroid();
   }, [spawnAsteroid]);
+
+  const updatePowerUps = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      powerUps: prev.powerUps
+        .map(powerUp => ({
+          ...powerUp,
+          position: wrapPosition({
+            x: powerUp.position.x + powerUp.velocity.x,
+            y: powerUp.position.y + powerUp.velocity.y,
+          }),
+          lifespan: powerUp.lifespan - 1,
+        }))
+        .filter(powerUp => powerUp.lifespan > 0),
+    }));
+  }, []);
 
   const checkCollisions = useCallback(() => {
     setGameState(prev => {
       let newBullets = [...prev.bullets];
       let newAsteroids = [...prev.asteroids];
+      let newPowerUps = [...prev.powerUps];
       let newScore = prev.score;
+      let newLives = prev.lives;
+      let newSpaceship = { ...prev.spaceship };
 
       // Bullet-asteroid collisions
       for (let i = newBullets.length - 1; i >= 0; i--) {
@@ -330,38 +436,109 @@ export const useAsteroidGameLogic = () => {
         for (let j = newAsteroids.length - 1; j >= 0; j--) {
           const asteroid = newAsteroids[j];
           const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
+          const adjustedSize = asteroid.type === 'boss' ? asteroidSize * 1.5 : asteroidSize;
           
           const distance = Math.sqrt(
             (bullet.position.x - asteroid.position.x) ** 2 +
             (bullet.position.y - asteroid.position.y) ** 2
           );
           
-          if (distance < asteroidSize / 2) {
-            // Remove bullet and asteroid (no splitting)
+          if (distance < adjustedSize / 2) {
             newBullets.splice(i, 1);
-            newAsteroids.splice(j, 1);
             
-            // Add score
-            newScore += GAME_CONSTANTS.POINTS[asteroid.size];
+            // Damage asteroid
+            const newHealth = asteroid.health - bullet.damage;
+            
+            if (newHealth <= 0) {
+              // Destroy asteroid
+              newAsteroids.splice(j, 1);
+              
+              const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroid.type];
+              const sizePoints = GAME_CONSTANTS.POINTS[asteroid.size];
+              newScore += sizePoints * typeData.points;
+              
+              // Chance to spawn power-up
+              if (Math.random() < GAME_CONSTANTS.POWERUP_SPAWN_CHANCE) {
+                newPowerUps.push(createPowerUp(asteroid.position));
+              }
+              
+              // Special effects for explosive asteroids
+              if (asteroid.type === 'explosive') {
+                // Damage nearby asteroids
+                newAsteroids = newAsteroids.map(nearbyAsteroid => {
+                  const explosionDistance = Math.sqrt(
+                    (nearbyAsteroid.position.x - asteroid.position.x) ** 2 +
+                    (nearbyAsteroid.position.y - asteroid.position.y) ** 2
+                  );
+                  
+                  if (explosionDistance < 100) {
+                    return { ...nearbyAsteroid, health: Math.max(1, nearbyAsteroid.health - 1) };
+                  }
+                  return nearbyAsteroid;
+                });
+              }
+            } else {
+              // Update asteroid health
+              newAsteroids[j] = { ...asteroid, health: newHealth };
+            }
             
             break;
           }
         }
       }
 
-      // Spaceship-asteroid collisions (only if not invulnerable and spaceship is visible)
+      // Spaceship-powerup collisions
+      if (spaceshipVisible && !prev.gameOver) {
+        for (let i = newPowerUps.length - 1; i >= 0; i--) {
+          const powerUp = newPowerUps[i];
+          const distance = Math.sqrt(
+            (prev.spaceship.position.x - powerUp.position.x) ** 2 +
+            (prev.spaceship.position.y - powerUp.position.y) ** 2
+          );
+          
+          if (distance < GAME_CONSTANTS.POWERUP_SIZE) {
+            newPowerUps.splice(i, 1);
+            
+            switch (powerUp.type) {
+              case 'rapidFire':
+                newSpaceship.weaponType = 'rapid';
+                toast.success("Rapid Fire activated!");
+                break;
+              case 'shield':
+                newSpaceship.shieldActive = true;
+                newSpaceship.shieldDuration = GAME_CONSTANTS.SHIELD_DURATION;
+                toast.success("Shield activated!");
+                break;
+              case 'extraLife':
+                newLives++;
+                toast.success("Extra life gained!");
+                break;
+              case 'spreadShot':
+                newSpaceship.weaponType = 'spread';
+                toast.success("Spread Shot activated!");
+                break;
+              case 'laser':
+                newSpaceship.weaponType = 'laser';
+                toast.success("Laser activated!");
+                break;
+            }
+          }
+        }
+      }
+
+      // Spaceship-asteroid collisions
       if (!isInvulnerable && spaceshipVisible && !prev.gameOver) {
         for (const asteroid of newAsteroids) {
           const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
+          const adjustedSize = asteroid.type === 'boss' ? asteroidSize * 1.5 : asteroidSize;
           const distance = Math.sqrt(
             (prev.spaceship.position.x - asteroid.position.x) ** 2 +
             (prev.spaceship.position.y - asteroid.position.y) ** 2
           );
           
-          if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
-            // Trigger hit handling
+          if (distance < (adjustedSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
             handleSpaceshipHit();
-            break; // Only process one collision per frame
+            break;
           }
         }
       }
@@ -370,7 +547,11 @@ export const useAsteroidGameLogic = () => {
         ...prev,
         bullets: newBullets,
         asteroids: newAsteroids,
+        powerUps: newPowerUps,
         score: newScore,
+        lives: newLives,
+        spaceship: newSpaceship,
+        weaponUpgradeTimer: newSpaceship.weaponType !== 'normal' ? GAME_CONSTANTS.WEAPON_UPGRADE_DURATION : 0,
       };
     });
   }, [isInvulnerable, spaceshipVisible, handleSpaceshipHit]);
@@ -386,6 +567,7 @@ export const useAsteroidGameLogic = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
+    updatePowerUps,
     checkCollisions,
     gameLoopRef,
   };
