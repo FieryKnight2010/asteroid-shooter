@@ -17,17 +17,21 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     switch (event.code) {
-      case 'ArrowLeft':
+      case 'KeyA':
         event.preventDefault();
         setControls(prev => ({ ...prev, left: true }));
         break;
-      case 'ArrowRight':
+      case 'KeyD':
         event.preventDefault();
         setControls(prev => ({ ...prev, right: true }));
         break;
-      case 'ArrowUp':
+      case 'KeyW':
         event.preventDefault();
         setControls(prev => ({ ...prev, thrust: true }));
+        break;
+      case 'KeyS':
+        event.preventDefault();
+        // S key can be used for reverse thrust or brake
         break;
       case 'Space':
         event.preventDefault();
@@ -42,13 +46,13 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     switch (event.code) {
-      case 'ArrowLeft':
+      case 'KeyA':
         setControls(prev => ({ ...prev, left: false }));
         break;
-      case 'ArrowRight':
+      case 'KeyD':
         setControls(prev => ({ ...prev, right: false }));
         break;
-      case 'ArrowUp':
+      case 'KeyW':
         setControls(prev => ({ ...prev, thrust: false }));
         break;
     }

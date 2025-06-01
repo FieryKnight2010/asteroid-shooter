@@ -50,9 +50,8 @@ const AsteroidGame = () => {
         style={{ 
           width: GAME_CONSTANTS.CANVAS_WIDTH, 
           height: GAME_CONSTANTS.CANVAS_HEIGHT,
-          backgroundImage: `radial-gradient(white 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-          backgroundOpacity: 0.1
+          backgroundImage: `radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
         }}
         onClick={handleClick}
       >
@@ -84,7 +83,7 @@ const AsteroidGame = () => {
       
       {/* Controls info */}
       <div className="mt-4 text-white text-center text-sm">
-        <p>Arrow Keys: Move • Space: Shoot • P: Pause</p>
+        <p>WASD: Move • Space: Shoot • P: Pause</p>
       </div>
     </div>
   );
