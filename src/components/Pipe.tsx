@@ -30,13 +30,13 @@ const Pipe: React.FC<PipeProps> = ({ x, height, gap, groundHeight, gameHeight, g
         <div className="absolute bottom-0 w-full h-6 bg-gradient-to-r from-green-700 to-green-600 border-b-2 border-green-800"></div>
       </div>
       
-      {/* Bottom pipe */}
+      {/* Bottom pipe - extends to the ground */}
       {bottomPipeHeight > 0 && (
         <div 
           className="bg-gradient-to-r from-green-600 to-green-500 border-2 border-green-700 shadow-lg"
           style={{
             width: '80px',
-            height: `${bottomPipeHeight}px`,
+            height: `${gameHeight - groundHeight - bottomPipeTop}px`,
             top: `${bottomPipeTop}px`,
           }}
         >
