@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position } from '../types/asteroidGame';
@@ -14,13 +13,13 @@ const createInitialSpaceship = (): Spaceship => ({
   isThrusting: false,
 });
 
-const createInitialGameState = (): GameState => ({
+const createInitialGameState = (level: number = 1): GameState => ({
   spaceship: createInitialSpaceship(),
   bullets: [],
   asteroids: [],
   score: 0,
-  level: 1,
-  lives: GAME_CONSTANTS.INITIAL_LIVES,
+  level,
+  lives: GAME_CONSTANTS.LIVES_PER_LEVEL,
   gameOver: false,
   gameStarted: false,
   paused: false,
@@ -30,6 +29,9 @@ export const useAsteroidGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [isInvulnerable, setIsInvulnerable] = useState(false);
   const [spaceshipVisible, setSpaceshipVisible] = useState(true);
+  const [selectedLevel, setSelectedLevel] = useState(1);
+  const [unlockedLevels, setUnlockedLevels] = useState(1);
+  const [showLevelSelector, setShowLevelSelector] = useState(false);
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
@@ -94,13 +96,26 @@ export const useAsteroidGameLogic = () => {
     });
   }, [respawnSpaceship]);
 
+  const getAvailableAsteroidTypes = (level: number): Asteroid['type'][] => {
+    const types: Asteroid['type'][] = [];
+    
+    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.normal) types.push('normal');
+    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.fast) types.push('fast');
+    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.armored) types.push('armored');
+    if (level >= GAME_CONSTANTS.ASTEROID_TYPE_LEVELS.explosive) types.push('explosive');
+    
+    return types;
+  };
+
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
     const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
     const levelSpeedMultiplier = 1 + (gameState.level - 1) * GAME_CONSTANTS.SPEED_INCREASE_PER_LEVEL;
     const timeSpeedMultiplier = 1 + (timeElapsed * 0.05);
     
-    const asteroidType = type || (['normal', 'fast', 'armored', 'explosive'][Math.floor(Math.random() * 4)] as Asteroid['type']);
+    // Only use asteroid types available for the current level
+    const availableTypes = getAvailableAsteroidTypes(gameState.level);
+    const asteroidType = type || availableTypes[Math.floor(Math.random() * availableTypes.length)];
     const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroidType];
     
     const speed = GAME_CONSTANTS.ASTEROID_SPEEDS[size];
@@ -183,45 +198,64 @@ export const useAsteroidGameLogic = () => {
     });
   }, []);
 
-  const checkLevelProgression = useCallback(() => {
+  const checkLevelCompletion = useCallback(() => {
     setGameState(prev => {
-      const pointsNeeded = prev.level * GAME_CONSTANTS.POINTS_PER_LEVEL;
-      
-      if (prev.score >= pointsNeeded) {
-        const newLevel = prev.level + 1;
-        toast.success(`Level Up! Welcome to Level ${newLevel}`);
+      // Level is complete when all asteroids are destroyed
+      if (prev.asteroids.length === 0 && prev.gameStarted && !prev.gameOver) {
+        const nextLevel = prev.level + 1;
         
-        return {
-          ...prev,
-          level: newLevel,
-        };
+        if (nextLevel <= GAME_CONSTANTS.MAX_LEVELS) {
+          // Unlock next level if not already unlocked
+          setUnlockedLevels(current => Math.max(current, nextLevel));
+          
+          toast.success(`Level ${prev.level} Complete! Moving to Level ${nextLevel}`);
+          
+          return {
+            ...createInitialGameState(nextLevel),
+            gameStarted: true,
+            asteroids: [createRandomAsteroid()],
+          };
+        } else {
+          // Game completed!
+          toast.success('Congratulations! You completed all levels!');
+          return {
+            ...prev,
+            gameOver: true,
+          };
+        }
       }
       
       return prev;
     });
   }, []);
 
-  const startGame = useCallback(() => {
-    const newGameState = createInitialGameState();
+  const startGame = useCallback((level?: number) => {
+    const gameLevel = level || selectedLevel;
+    const newGameState = createInitialGameState(gameLevel);
     newGameState.gameStarted = true;
     newGameState.asteroids = [createRandomAsteroid()];
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
     setGameState(newGameState);
+    setSelectedLevel(gameLevel);
     setIsInvulnerable(false);
     setSpaceshipVisible(true);
-    toast.success("Game started! Destroy the asteroids!");
+    setShowLevelSelector(false);
+    toast.success(`Level ${gameLevel} started!`);
+  }, [selectedLevel]);
+
+  const selectLevel = useCallback((level: number) => {
+    setSelectedLevel(level);
+    startGame(level);
+  }, [startGame]);
+
+  const showLevelMenu = useCallback(() => {
+    setShowLevelSelector(true);
   }, []);
 
-  const restartGame = useCallback(() => {
-    if (respawnTimerRef.current) {
-      clearTimeout(respawnTimerRef.current);
-    }
-    if (invulnerabilityTimerRef.current) {
-      clearTimeout(invulnerabilityTimerRef.current);
-    }
-    startGame();
-  }, [startGame]);
+  const hideLevelMenu = useCallback(() => {
+    setShowLevelSelector(false);
+  }, []);
 
   const pauseGame = useCallback(() => {
     setGameState(prev => ({ ...prev, paused: !prev.paused }));
@@ -357,7 +391,8 @@ export const useAsteroidGameLogic = () => {
     }));
     
     spawnAsteroid();
-  }, [spawnAsteroid]);
+    checkLevelCompletion();
+  }, [spawnAsteroid, checkLevelCompletion]);
 
   const checkCollisions = useCallback((createExplosion?: (x: number, y: number, color?: string, count?: number) => void) => {
     setGameState(prev => {
@@ -462,17 +497,6 @@ export const useAsteroidGameLogic = () => {
         score: newScore,
       };
 
-      // Check level progression
-      const pointsNeeded = updatedState.level * GAME_CONSTANTS.POINTS_PER_LEVEL;
-      if (updatedState.score >= pointsNeeded) {
-        const newLevel = updatedState.level + 1;
-        toast.success(`Level Up! Welcome to Level ${newLevel}`);
-        return {
-          ...updatedState,
-          level: newLevel,
-        };
-      }
-
       return updatedState;
     });
   }, [isInvulnerable, spaceshipVisible, handleSpaceshipHit]);
@@ -481,6 +505,9 @@ export const useAsteroidGameLogic = () => {
     gameState,
     isInvulnerable,
     spaceshipVisible,
+    selectedLevel,
+    unlockedLevels,
+    showLevelSelector,
     startGame,
     restartGame,
     pauseGame,
@@ -489,6 +516,9 @@ export const useAsteroidGameLogic = () => {
     updateBullets,
     updateAsteroids,
     checkCollisions,
+    selectLevel,
+    showLevelMenu,
+    hideLevelMenu,
     gameLoopRef,
   };
 };

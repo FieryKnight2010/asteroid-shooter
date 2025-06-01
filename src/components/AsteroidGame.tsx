@@ -8,6 +8,7 @@ import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
 import AsteroidGameUI from './AsteroidGameUI';
+import LevelSelector from './LevelSelector';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
@@ -17,6 +18,9 @@ const AsteroidGame = () => {
     gameState,
     isInvulnerable,
     spaceshipVisible,
+    selectedLevel,
+    unlockedLevels,
+    showLevelSelector,
     startGame,
     restartGame,
     pauseGame,
@@ -25,6 +29,9 @@ const AsteroidGame = () => {
     updateBullets,
     updateAsteroids,
     checkCollisions,
+    selectLevel,
+    showLevelMenu,
+    hideLevelMenu,
     gameLoopRef,
   } = useAsteroidGameLogic();
 
@@ -90,19 +97,33 @@ const AsteroidGame = () => {
         {/* Particle Effects */}
         <ParticleEffect particles={particles} />
         
+        {/* Level Selector */}
+        {showLevelSelector && (
+          <LevelSelector
+            currentLevel={selectedLevel}
+            unlockedLevels={unlockedLevels}
+            onLevelSelect={selectLevel}
+            onBack={hideLevelMenu}
+          />
+        )}
+        
         {/* Game UI */}
-        <AsteroidGameUI 
-          gameState={gameState}
-          onStart={startGame}
-          onRestart={restartGame}
-        />
+        {!showLevelSelector && (
+          <AsteroidGameUI 
+            gameState={gameState}
+            selectedLevel={selectedLevel}
+            onStart={startGame}
+            onRestart={restartGame}
+            onShowLevelMenu={showLevelMenu}
+          />
+        )}
       </div>
       
       {/* Controls info */}
       <div className="mt-4 text-white text-center text-sm">
         <p>WASD: Move • Space: Shoot • P: Pause</p>
         <p className="text-xs mt-1">
-          Asteroid types: Green=Fast, Gray=Armored (3 hits), Orange=Explosive
+          Asteroid types unlock as you progress: Fast (L8), Armored (L15), Explosive (L22)
         </p>
       </div>
     </div>
@@ -110,3 +131,4 @@ const AsteroidGame = () => {
 };
 
 export default AsteroidGame;
+
