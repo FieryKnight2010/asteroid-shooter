@@ -8,7 +8,6 @@ interface UseAsteroidGameLoopProps {
   updateSpaceship: (controls: Controls) => void;
   updateBullets: () => void;
   updateAsteroids: () => void;
-  updatePowerUps: () => void;
   checkCollisions: () => void;
   gameLoopRef: React.MutableRefObject<number | undefined>;
   updateParticles: () => void;
@@ -22,7 +21,6 @@ export const useAsteroidGameLoop = ({
   updateSpaceship,
   updateBullets,
   updateAsteroids,
-  updatePowerUps,
   checkCollisions,
   gameLoopRef,
   updateParticles,
@@ -38,7 +36,6 @@ export const useAsteroidGameLoop = ({
       updateSpaceship(controls);
       updateBullets();
       updateAsteroids();
-      updatePowerUps();
       checkCollisions();
       updateParticles();
       
@@ -76,7 +73,6 @@ export const useAsteroidGameLoop = ({
     updateSpaceship,
     updateBullets,
     updateAsteroids,
-    updatePowerUps,
     checkCollisions,
     gameLoopRef,
     updateParticles,

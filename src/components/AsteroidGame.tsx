@@ -7,7 +7,6 @@ import { useParticleSystem } from '../hooks/useParticleSystem';
 import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
-import PowerUp from './PowerUp';
 import AsteroidGameUI from './AsteroidGameUI';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
@@ -25,7 +24,6 @@ const AsteroidGame = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
-    updatePowerUps,
     checkCollisions,
     gameLoopRef,
   } = useAsteroidGameLogic();
@@ -40,7 +38,6 @@ const AsteroidGame = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
-    updatePowerUps,
     checkCollisions,
     gameLoopRef,
     updateParticles,
@@ -90,11 +87,6 @@ const AsteroidGame = () => {
           <Asteroid key={asteroid.id} asteroid={asteroid} />
         ))}
         
-        {/* Power-ups */}
-        {gameState.powerUps.map(powerUp => (
-          <PowerUp key={powerUp.id} powerUp={powerUp} />
-        ))}
-        
         {/* Particle Effects */}
         <ParticleEffect particles={particles} />
         
@@ -110,7 +102,7 @@ const AsteroidGame = () => {
       <div className="mt-4 text-white text-center text-sm">
         <p>WASD: Move • Space: Shoot • P: Pause</p>
         <p className="text-xs mt-1">
-          Power-ups: R=Rapid Fire, S=Shield, +=Extra Life, ◊=Spread Shot, L=Laser
+          Asteroid types: Green=Fast, Gray=Armored (3 hits), Orange=Explosive
         </p>
       </div>
     </div>
