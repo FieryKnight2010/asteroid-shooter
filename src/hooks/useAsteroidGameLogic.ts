@@ -33,8 +33,8 @@ export const useAsteroidGameLogic = () => {
   const asteroidIdRef = useRef(0);
   const spawnTimerRef = useRef(0);
   const gameStartTimeRef = useRef(0);
-  const respawnTimerRef = useRef<number>();
-  const invulnerabilityTimerRef = useRef<number>();
+  const respawnTimerRef = useRef<NodeJS.Timeout>();
+  const invulnerabilityTimerRef = useRef<NodeJS.Timeout>();
 
   const wrapPosition = (position: Position): Position => ({
     x: ((position.x % GAME_CONSTANTS.CANVAS_WIDTH) + GAME_CONSTANTS.CANVAS_WIDTH) % GAME_CONSTANTS.CANVAS_WIDTH,
