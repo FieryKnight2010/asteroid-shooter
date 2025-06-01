@@ -208,7 +208,8 @@ export const useAsteroidGameLogic = () => {
         bulletsCount: prev.bullets.length,
         maxBullets: GAME_CONSTANTS.MAX_BULLETS,
         gameOver: prev.gameOver,
-        gameStarted: prev.gameStarted
+        gameStarted: prev.gameStarted,
+        fireRateTimer: fireRateTimerRef.current
       });
 
       if (prev.bullets.length >= GAME_CONSTANTS.MAX_BULLETS || prev.gameOver || !prev.gameStarted) {
@@ -217,13 +218,12 @@ export const useAsteroidGameLogic = () => {
       }
 
       // Basic fire rate control
-      if (fireRateTimerRef.current < 15) {
+      if (fireRateTimerRef.current > 0) {
         console.log('Fire rate limited, timer:', fireRateTimerRef.current);
-        fireRateTimerRef.current++;
         return prev;
       }
       
-      fireRateTimerRef.current = 0;
+      fireRateTimerRef.current = 8; // Set cooldown period
       console.log('Creating new bullet');
 
       const { spaceship } = prev;
@@ -252,6 +252,11 @@ export const useAsteroidGameLogic = () => {
 
   const updateSpaceship = useCallback((controls: any) => {
     setGameState(prev => {
+      // Decrement fire rate timer
+      if (fireRateTimerRef.current > 0) {
+        fireRateTimerRef.current--;
+      }
+
       const { spaceship } = prev;
       let newRotation = spaceship.rotation;
       let newVelocity = { ...spaceship.velocity };
