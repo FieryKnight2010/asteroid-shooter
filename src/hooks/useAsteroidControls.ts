@@ -31,7 +31,7 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         break;
       case 'KeyS':
         event.preventDefault();
-        // S key can be used for reverse thrust or brake
+        // S key for reverse/brake - could add reverse thrust later
         break;
       case 'Space':
         event.preventDefault();

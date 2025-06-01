@@ -20,7 +20,7 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting }) => {
         top: position.y - size / 2,
         width: size,
         height: size,
-        transform: `rotate(${rotation}rad)`,
+        transform: `rotate(${rotation - Math.PI / 2}rad)`, // Offset by -90 degrees so 0 rotation points up
       }}
     >
       {/* Main ship body */}

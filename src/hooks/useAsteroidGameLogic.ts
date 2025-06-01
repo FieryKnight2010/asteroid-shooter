@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, Velocity } from '../types/asteroidGame';
@@ -108,9 +107,14 @@ export const useAsteroidGameLogic = () => {
       }
 
       const { spaceship } = prev;
+      // Calculate bullet spawn position at the tip of the spaceship
+      const tipOffset = GAME_CONSTANTS.SPACESHIP_SIZE / 2;
+      const bulletStartX = spaceship.position.x + Math.cos(spaceship.rotation) * tipOffset;
+      const bulletStartY = spaceship.position.y + Math.sin(spaceship.rotation) * tipOffset;
+      
       const bullet: Bullet = {
         id: bulletIdRef.current++,
-        position: { ...spaceship.position },
+        position: { x: bulletStartX, y: bulletStartY },
         velocity: {
           x: Math.cos(spaceship.rotation) * GAME_CONSTANTS.BULLET_SPEED,
           y: Math.sin(spaceship.rotation) * GAME_CONSTANTS.BULLET_SPEED,
@@ -135,7 +139,7 @@ export const useAsteroidGameLogic = () => {
       if (controls.left) newRotation -= GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
       if (controls.right) newRotation += GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
 
-      // Thrust
+      // Forward/backward movement in the direction of pointing
       if (controls.thrust) {
         newVelocity.x += Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
         newVelocity.y += Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
