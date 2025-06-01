@@ -244,6 +244,16 @@ export const useAsteroidGameLogic = () => {
     toast.success(`Level ${gameLevel} started!`);
   }, [selectedLevel]);
 
+  const restartGame = useCallback(() => {
+    if (respawnTimerRef.current) {
+      clearTimeout(respawnTimerRef.current);
+    }
+    if (invulnerabilityTimerRef.current) {
+      clearTimeout(invulnerabilityTimerRef.current);
+    }
+    startGame(selectedLevel);
+  }, [startGame, selectedLevel]);
+
   const selectLevel = useCallback((level: number) => {
     setSelectedLevel(level);
     startGame(level);
