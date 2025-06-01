@@ -8,7 +8,7 @@ interface UseAsteroidGameLoopProps {
   updateSpaceship: (controls: Controls) => void;
   updateBullets: () => void;
   updateAsteroids: () => void;
-  checkCollisions: () => void;
+  checkCollisions: (createExplosion?: (x: number, y: number, color?: string, count?: number) => void) => void;
   gameLoopRef: React.MutableRefObject<number | undefined>;
   updateParticles: () => void;
   createExplosion: (x: number, y: number, color?: string, count?: number) => void;
@@ -36,7 +36,7 @@ export const useAsteroidGameLoop = ({
       updateSpaceship(controls);
       updateBullets();
       updateAsteroids();
-      checkCollisions();
+      checkCollisions(createExplosion); // Pass createExplosion to checkCollisions
       updateParticles();
       
       // Create thrust particles when thrusting

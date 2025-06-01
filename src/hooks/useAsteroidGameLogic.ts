@@ -333,11 +333,12 @@ export const useAsteroidGameLogic = () => {
     spawnAsteroid();
   }, [spawnAsteroid]);
 
-  const checkCollisions = useCallback(() => {
+  const checkCollisions = useCallback((createExplosion?: (x: number, y: number, color?: string, count?: number) => void) => {
     setGameState(prev => {
       let newBullets = [...prev.bullets];
       let newAsteroids = [...prev.asteroids];
       let newScore = prev.score;
+      let spaceshipHit = false;
 
       // Bullet-asteroid collisions
       for (let i = newBullets.length - 1; i >= 0; i--) {
@@ -368,6 +369,21 @@ export const useAsteroidGameLogic = () => {
               
               // Special effects for explosive asteroids
               if (asteroid.type === 'explosive') {
+                // Create explosion animation
+                if (createExplosion) {
+                  createExplosion(asteroid.position.x, asteroid.position.y, '#ff4400', 15);
+                }
+                
+                // Check if spaceship is within explosion radius
+                const spaceshipDistance = Math.sqrt(
+                  (prev.spaceship.position.x - asteroid.position.x) ** 2 +
+                  (prev.spaceship.position.y - asteroid.position.y) ** 2
+                );
+                
+                if (spaceshipDistance < 100 && !isInvulnerable && spaceshipVisible && !prev.gameOver) {
+                  spaceshipHit = true;
+                }
+                
                 // Damage nearby asteroids
                 newAsteroids = newAsteroids.map(nearbyAsteroid => {
                   const explosionDistance = Math.sqrt(
@@ -391,8 +407,8 @@ export const useAsteroidGameLogic = () => {
         }
       }
 
-      // Spaceship-asteroid collisions
-      if (!isInvulnerable && spaceshipVisible && !prev.gameOver) {
+      // Spaceship-asteroid collisions (direct contact)
+      if (!spaceshipHit && !isInvulnerable && spaceshipVisible && !prev.gameOver) {
         for (const asteroid of newAsteroids) {
           const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
           const distance = Math.sqrt(
@@ -401,10 +417,15 @@ export const useAsteroidGameLogic = () => {
           );
           
           if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
-            handleSpaceshipHit();
+            spaceshipHit = true;
             break;
           }
         }
+      }
+
+      // Handle spaceship hit (either from explosion or direct contact)
+      if (spaceshipHit) {
+        handleSpaceshipHit();
       }
 
       return {
