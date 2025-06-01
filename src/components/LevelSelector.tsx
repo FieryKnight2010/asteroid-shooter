@@ -8,17 +8,20 @@ interface LevelSelectorProps {
   unlockedLevels: number;
   onLevelSelect: (level: number) => void;
   onBack: () => void;
+  getScoreForLevel: (level: number) => number;
 }
 
 const LevelSelector: React.FC<LevelSelectorProps> = ({
   currentLevel,
   unlockedLevels,
   onLevelSelect,
-  onBack
+  onBack,
+  getScoreForLevel
 }) => {
   const renderLevelButton = (level: number) => {
     const isUnlocked = level <= unlockedLevels;
     const isCurrent = level === currentLevel;
+    const requiredScore = getScoreForLevel(level);
     
     // Determine what asteroid types are available at this level
     const availableTypes = [];
@@ -33,7 +36,7 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({
           onClick={() => isUnlocked && onLevelSelect(level)}
           disabled={!isUnlocked}
           className={`
-            w-16 h-16 rounded-lg font-bold text-sm transition-all duration-200
+            w-20 h-20 rounded-lg font-bold text-sm transition-all duration-200 flex flex-col items-center justify-center
             ${isUnlocked 
               ? isCurrent 
                 ? 'bg-blue-600 text-white shadow-lg scale-105' 
@@ -44,7 +47,8 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({
         >
           {isUnlocked ? (
             <div className="flex flex-col items-center">
-              <span>{level}</span>
+              <span className="text-lg">{level}</span>
+              <span className="text-xs">{requiredScore}pts</span>
               {isCurrent && <Star size={12} className="mt-1" />}
             </div>
           ) : (
@@ -55,7 +59,7 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({
         {/* Tooltip on hover */}
         {isUnlocked && (
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black bg-opacity-80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-            <div>Level {level}</div>
+            <div>Level {level} - {requiredScore} points needed</div>
             <div className="text-xs text-gray-300">{availableTypes.join(', ')}</div>
           </div>
         )}
@@ -85,6 +89,7 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({
             <span className="text-gray-300">Progress: {unlockedLevels}/{GAME_CONSTANTS.MAX_LEVELS} levels unlocked</span>
           </div>
           <div className="text-xs text-gray-400">
+            <p>• Each level requires reaching a score target (1000 points per level)</p>
             <p>• Each level gives you {GAME_CONSTANTS.LIVES_PER_LEVEL} lives</p>
             <p>• New asteroid types unlock as you progress:</p>
             <p className="ml-4">
@@ -100,4 +105,3 @@ const LevelSelector: React.FC<LevelSelectorProps> = ({
 };
 
 export default LevelSelector;
-

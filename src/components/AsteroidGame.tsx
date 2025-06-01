@@ -33,6 +33,7 @@ const AsteroidGame = () => {
     showLevelMenu,
     hideLevelMenu,
     gameLoopRef,
+    getScoreForLevel,
   } = useAsteroidGameLogic();
 
   const { particles, createExplosion, createTrail, updateParticles } = useParticleSystem();
@@ -104,6 +105,7 @@ const AsteroidGame = () => {
             unlockedLevels={unlockedLevels}
             onLevelSelect={selectLevel}
             onBack={hideLevelMenu}
+            getScoreForLevel={getScoreForLevel}
           />
         )}
         
@@ -115,6 +117,7 @@ const AsteroidGame = () => {
             onStart={startGame}
             onRestart={restartGame}
             onShowLevelMenu={showLevelMenu}
+            getScoreForLevel={getScoreForLevel}
           />
         )}
       </div>
@@ -123,7 +126,7 @@ const AsteroidGame = () => {
       <div className="mt-4 text-white text-center text-sm">
         <p>WASD: Move • Space: Shoot • P: Pause</p>
         <p className="text-xs mt-1">
-          Asteroid types unlock as you progress: Fast (L8), Armored (L15), Explosive (L22)
+          Levels progress by score: Fast (L8), Armored (L15), Explosive (L22)
         </p>
       </div>
     </div>
@@ -131,4 +134,3 @@ const AsteroidGame = () => {
 };
 
 export default AsteroidGame;
-

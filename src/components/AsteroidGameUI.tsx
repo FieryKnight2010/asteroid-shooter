@@ -10,6 +10,7 @@ interface AsteroidGameUIProps {
   onStart: () => void;
   onRestart: () => void;
   onShowLevelMenu: () => void;
+  getScoreForLevel: (level: number) => number;
 }
 
 const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({ 
@@ -17,7 +18,8 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
   selectedLevel,
   onStart, 
   onRestart,
-  onShowLevelMenu
+  onShowLevelMenu,
+  getScoreForLevel
 }) => {
   // Determine what asteroid types are available at current level
   const getAvailableTypes = (level: number) => {
@@ -30,6 +32,7 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
   };
 
   const availableTypes = getAvailableTypes(gameState.level);
+  const requiredScore = getScoreForLevel(gameState.level);
 
   return (
     <div className="absolute inset-0 pointer-events-none">
@@ -37,9 +40,17 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
       {gameState.gameStarted && (
         <div className="absolute top-4 left-4 text-white">
           <div className="bg-black bg-opacity-50 p-3 rounded">
-            <div className="text-lg font-bold">Score: {gameState.score}</div>
+            <div className="text-lg font-bold">Score: {gameState.score}/{requiredScore}</div>
             <div className="text-sm">Lives: {gameState.lives}</div>
             <div className="text-sm">Level: {gameState.level}/{GAME_CONSTANTS.MAX_LEVELS}</div>
+            
+            {/* Progress bar for level completion */}
+            <div className="mt-2 w-32 h-2 bg-gray-600 rounded">
+              <div 
+                className="h-full bg-green-500 rounded transition-all duration-300"
+                style={{ width: `${Math.min(100, (gameState.score / requiredScore) * 100)}%` }}
+              />
+            </div>
             
             {/* Available asteroid types */}
             <div className="mt-2">
@@ -57,7 +68,7 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
             <h1 className="text-4xl font-bold mb-4">Asteroid Shooter</h1>
             <p className="mb-4">30 levels of asteroid-blasting action!</p>
             <p className="mb-6 text-sm text-gray-300">
-              Selected Level: {selectedLevel} • {GAME_CONSTANTS.LIVES_PER_LEVEL} lives per level
+              Selected Level: {selectedLevel} • Score needed: {getScoreForLevel(selectedLevel)}
             </p>
             
             <div className="flex gap-4 justify-center">
@@ -128,4 +139,3 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
 };
 
 export default AsteroidGameUI;
-
