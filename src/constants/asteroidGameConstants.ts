@@ -49,6 +49,8 @@ export const GAME_CONSTANTS = {
   BASE_ASTEROIDS: 4,
   ASTEROIDS_PER_LEVEL: 2,
   MAX_ASTEROIDS: 12,
+  POINTS_PER_LEVEL: 500,
+  SPEED_INCREASE_PER_LEVEL: 0.1,
   
   // Physics
   WRAP_MARGIN: 50,
@@ -56,4 +58,3 @@ export const GAME_CONSTANTS = {
   // Explosion
   EXPLOSION_RADIUS: 100,
 } as const;
-

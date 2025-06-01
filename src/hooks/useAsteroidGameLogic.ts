@@ -96,7 +96,8 @@ export const useAsteroidGameLogic = () => {
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
     const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
-    const speedMultiplier = 1 + (timeElapsed * 0.05);
+    const levelSpeedMultiplier = 1 + (gameState.level - 1) * GAME_CONSTANTS.SPEED_INCREASE_PER_LEVEL;
+    const timeSpeedMultiplier = 1 + (timeElapsed * 0.05);
     
     const asteroidType = type || (['normal', 'fast', 'armored', 'explosive'][Math.floor(Math.random() * 4)] as Asteroid['type']);
     const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroidType];
@@ -104,7 +105,7 @@ export const useAsteroidGameLogic = () => {
     const speed = GAME_CONSTANTS.ASTEROID_SPEEDS[size];
     const angle = Math.random() * Math.PI * 2;
     const baseVelocity = Math.random() * (speed.max - speed.min) + speed.min;
-    const finalVelocity = baseVelocity * speedMultiplier * typeData.speedMultiplier;
+    const finalVelocity = baseVelocity * timeSpeedMultiplier * typeData.speedMultiplier * levelSpeedMultiplier;
     
     return {
       id: asteroidIdRef.current++,
@@ -155,13 +156,19 @@ export const useAsteroidGameLogic = () => {
 
       const currentTime = Date.now();
       const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
+      const levelSpawnMultiplier = 1 + (prev.level - 1) * 0.2;
       const baseSpawnRate = 180;
-      const minSpawnRate = 30;
-      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 2);
+      const minSpawnRate = 20;
+      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - (timeElapsed * 2) - (prev.level * 10));
+
+      const maxAsteroidsForLevel = Math.min(
+        GAME_CONSTANTS.MAX_ASTEROIDS,
+        GAME_CONSTANTS.BASE_ASTEROIDS + (prev.level - 1) * GAME_CONSTANTS.ASTEROIDS_PER_LEVEL
+      );
 
       spawnTimerRef.current++;
       
-      if (spawnTimerRef.current >= spawnRate) {
+      if (spawnTimerRef.current >= spawnRate && prev.asteroids.length < maxAsteroidsForLevel) {
         spawnTimerRef.current = 0;
         const newAsteroid = createRandomAsteroid();
         
@@ -171,6 +178,24 @@ export const useAsteroidGameLogic = () => {
         };
       }
 
+      return prev;
+    });
+  }, []);
+
+  const checkLevelProgression = useCallback(() => {
+    setGameState(prev => {
+      const pointsNeeded = prev.level * GAME_CONSTANTS.POINTS_PER_LEVEL;
+      
+      if (prev.score >= pointsNeeded) {
+        const newLevel = prev.level + 1;
+        toast.success(`Level Up! Welcome to Level ${newLevel}`);
+        
+        return {
+          ...prev,
+          level: newLevel,
+        };
+      }
+      
       return prev;
     });
   }, []);
@@ -395,7 +420,7 @@ export const useAsteroidGameLogic = () => {
                     return { ...nearbyAsteroid, health: Math.max(1, nearbyAsteroid.health - 1) };
                   }
                   return nearbyAsteroid;
-                });
+                }
               }
             } else {
               // Update asteroid health
@@ -428,12 +453,26 @@ export const useAsteroidGameLogic = () => {
         handleSpaceshipHit();
       }
 
-      return {
+      // Check for level progression after updating score
+      const updatedState = {
         ...prev,
         bullets: newBullets,
         asteroids: newAsteroids,
         score: newScore,
       };
+
+      // Check level progression
+      const pointsNeeded = updatedState.level * GAME_CONSTANTS.POINTS_PER_LEVEL;
+      if (updatedState.score >= pointsNeeded) {
+        const newLevel = updatedState.level + 1;
+        toast.success(`Level Up! Welcome to Level ${newLevel}`);
+        return {
+          ...updatedState,
+          level: newLevel,
+        };
+      }
+
+      return updatedState;
     });
   }, [isInvulnerable, spaceshipVisible, handleSpaceshipHit]);
 
