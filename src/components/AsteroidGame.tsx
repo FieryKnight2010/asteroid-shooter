@@ -3,10 +3,13 @@ import React from 'react';
 import { useAsteroidGameLogic } from '../hooks/useAsteroidGameLogic';
 import { useAsteroidControls } from '../hooks/useAsteroidControls';
 import { useAsteroidGameLoop } from '../hooks/useAsteroidGameLoop';
+import { useParticleSystem } from '../hooks/useParticleSystem';
 import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
 import AsteroidGameUI from './AsteroidGameUI';
+import Starfield from './Starfield';
+import ParticleEffect from './ParticleEffect';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 
 const AsteroidGame = () => {
@@ -25,6 +28,8 @@ const AsteroidGame = () => {
     gameLoopRef,
   } = useAsteroidGameLogic();
 
+  const { particles, createExplosion, createTrail, updateParticles } = useParticleSystem();
+
   const controls = useAsteroidControls({ shoot, pauseGame });
 
   useAsteroidGameLoop({
@@ -35,6 +40,9 @@ const AsteroidGame = () => {
     updateAsteroids,
     checkCollisions,
     gameLoopRef,
+    updateParticles,
+    createExplosion,
+    createTrail,
   });
 
   const handleClick = () => {
@@ -52,11 +60,13 @@ const AsteroidGame = () => {
         style={{ 
           width: GAME_CONSTANTS.CANVAS_WIDTH, 
           height: GAME_CONSTANTS.CANVAS_HEIGHT,
-          backgroundImage: `radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
+          background: 'radial-gradient(ellipse at center, #0a0a23 0%, #000 70%)',
         }}
         onClick={handleClick}
       >
+        {/* Starfield Background */}
+        <Starfield />
+        
         {/* Spaceship */}
         {gameState.gameStarted && !gameState.gameOver && spaceshipVisible && (
           <div className={isInvulnerable ? 'animate-pulse' : ''}>
@@ -76,6 +86,9 @@ const AsteroidGame = () => {
         {gameState.asteroids.map(asteroid => (
           <Asteroid key={asteroid.id} asteroid={asteroid} />
         ))}
+        
+        {/* Particle Effects */}
+        <ParticleEffect particles={particles} />
         
         {/* Game UI */}
         <AsteroidGameUI 
