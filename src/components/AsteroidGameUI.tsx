@@ -21,7 +21,6 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
         <div className="absolute top-4 left-4 text-white">
           <div className="bg-black bg-opacity-50 p-3 rounded">
             <div className="text-lg font-bold">Score: {gameState.score}</div>
-            <div className="text-sm">Level: {gameState.level}</div>
             <div className="text-sm">Lives: {gameState.lives}</div>
           </div>
         </div>
@@ -51,7 +50,6 @@ const AsteroidGameUI: React.FC<AsteroidGameUIProps> = ({
             <h2 className="text-3xl font-bold text-red-500 mb-4">Game Over!</h2>
             <div className="mb-6">
               <p className="text-lg mb-2">Final Score: {gameState.score}</p>
-              <p className="text-sm">Level Reached: {gameState.level}</p>
             </div>
             <button 
               onClick={onRestart}

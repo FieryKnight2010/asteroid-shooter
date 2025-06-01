@@ -31,6 +31,8 @@ export const useAsteroidGameLogic = () => {
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
+  const spawnTimerRef = useRef(0);
+  const gameStartTimeRef = useRef(0);
 
   const wrapPosition = (position: Position): Position => ({
     x: ((position.x % GAME_CONSTANTS.CANVAS_WIDTH) + GAME_CONSTANTS.CANVAS_WIDTH) % GAME_CONSTANTS.CANVAS_WIDTH,
@@ -76,19 +78,39 @@ export const useAsteroidGameLogic = () => {
     return createAsteroid(position, 'large');
   };
 
-  const generateAsteroids = (level: number): Asteroid[] => {
-    const count = Math.min(
-      GAME_CONSTANTS.BASE_ASTEROIDS + (level - 1) * GAME_CONSTANTS.ASTEROIDS_PER_LEVEL,
-      GAME_CONSTANTS.MAX_ASTEROIDS
-    );
-    
-    return Array.from({ length: count }, () => createRandomAsteroid());
-  };
+  const spawnAsteroid = useCallback(() => {
+    setGameState(prev => {
+      if (!prev.gameStarted || prev.gameOver || prev.paused) {
+        return prev;
+      }
+
+      // Calculate spawn rate based on time elapsed
+      const currentTime = Date.now();
+      const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000; // seconds
+      const baseSpawnRate = 180; // frames between spawns at start (3 seconds at 60fps)
+      const minSpawnRate = 30; // minimum frames between spawns (0.5 seconds at 60fps)
+      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 2);
+
+      spawnTimerRef.current++;
+      
+      if (spawnTimerRef.current >= spawnRate) {
+        spawnTimerRef.current = 0;
+        return {
+          ...prev,
+          asteroids: [...prev.asteroids, createRandomAsteroid()],
+        };
+      }
+
+      return prev;
+    });
+  }, []);
 
   const startGame = useCallback(() => {
     const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
-    newGameState.asteroids = generateAsteroids(1);
+    newGameState.asteroids = [createRandomAsteroid()]; // Start with one asteroid
+    gameStartTimeRef.current = Date.now();
+    spawnTimerRef.current = 0;
     setGameState(newGameState);
     toast.success("Game started! Destroy the asteroids!");
   }, []);
@@ -209,14 +231,16 @@ export const useAsteroidGameLogic = () => {
         rotation: asteroid.rotation + asteroid.rotationSpeed,
       })),
     }));
-  }, []);
+    
+    // Spawn new asteroids
+    spawnAsteroid();
+  }, [spawnAsteroid]);
 
   const checkCollisions = useCallback(() => {
     setGameState(prev => {
       let newBullets = [...prev.bullets];
       let newAsteroids = [...prev.asteroids];
       let newScore = prev.score;
-      let newLevel = prev.level;
       let newLives = prev.lives;
       let gameOver = false;
 
@@ -236,21 +260,10 @@ export const useAsteroidGameLogic = () => {
           if (distance < asteroidSize / 2) {
             // Remove bullet and asteroid
             newBullets.splice(i, 1);
-            const hitAsteroid = newAsteroids.splice(j, 1)[0];
+            newAsteroids.splice(j, 1);
             
             // Add score
-            newScore += GAME_CONSTANTS.POINTS[hitAsteroid.size];
-            
-            // Split asteroid if large or medium
-            if (hitAsteroid.size === 'large') {
-              for (let k = 0; k < 2; k++) {
-                newAsteroids.push(createAsteroid(hitAsteroid.position, 'medium'));
-              }
-            } else if (hitAsteroid.size === 'medium') {
-              for (let k = 0; k < 2; k++) {
-                newAsteroids.push(createAsteroid(hitAsteroid.position, 'small'));
-              }
-            }
+            newScore += GAME_CONSTANTS.POINTS[asteroid.size];
             
             break;
           }
@@ -277,19 +290,11 @@ export const useAsteroidGameLogic = () => {
         }
       }
 
-      // Check level progression
-      if (newAsteroids.length === 0 && !gameOver) {
-        newLevel++;
-        newAsteroids = generateAsteroids(newLevel);
-        toast.success(`Level ${newLevel}! More asteroids incoming!`);
-      }
-
       return {
         ...prev,
         bullets: newBullets,
         asteroids: newAsteroids,
         score: newScore,
-        level: newLevel,
         lives: newLives,
         gameOver,
         spaceship: gameOver ? createInitialSpaceship() : prev.spaceship,
