@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position } from '../types/asteroidGame';
@@ -420,7 +421,7 @@ export const useAsteroidGameLogic = () => {
                     return { ...nearbyAsteroid, health: Math.max(1, nearbyAsteroid.health - 1) };
                   }
                   return nearbyAsteroid;
-                }
+                });
               }
             } else {
               // Update asteroid health
