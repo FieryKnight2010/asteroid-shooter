@@ -145,6 +145,12 @@ export const useAsteroidGameLogic = () => {
         newVelocity.y += Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
       }
 
+      // Reverse thrust (S key)
+      if (controls.reverse) {
+        newVelocity.x -= Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
+        newVelocity.y -= Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
+      }
+
       // Apply friction and speed limit
       newVelocity.x *= GAME_CONSTANTS.SPACESHIP_FRICTION;
       newVelocity.y *= GAME_CONSTANTS.SPACESHIP_FRICTION;

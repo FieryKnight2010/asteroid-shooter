@@ -49,4 +49,5 @@ export interface Controls {
   right: boolean;
   thrust: boolean;
   shoot: boolean;
+  reverse?: boolean;
 }

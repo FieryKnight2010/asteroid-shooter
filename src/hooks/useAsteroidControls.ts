@@ -31,7 +31,7 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         break;
       case 'KeyS':
         event.preventDefault();
-        // S key for reverse/brake - could add reverse thrust later
+        setControls(prev => ({ ...prev, reverse: true }));
         break;
       case 'Space':
         event.preventDefault();
@@ -54,6 +54,9 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         break;
       case 'KeyW':
         setControls(prev => ({ ...prev, thrust: false }));
+        break;
+      case 'KeyS':
+        setControls(prev => ({ ...prev, reverse: false }));
         break;
     }
   }, []);
