@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, Velocity } from '../types/asteroidGame';
@@ -40,16 +39,22 @@ export const useAsteroidGameLogic = () => {
   });
 
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small'): Asteroid => {
+    // Calculate speed multiplier based on game time
+    const currentTime = Date.now();
+    const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000; // seconds
+    const speedMultiplier = 1 + (timeElapsed * 0.05); // 5% speed increase per second
+    
     const speed = GAME_CONSTANTS.ASTEROID_SPEEDS[size];
     const angle = Math.random() * Math.PI * 2;
-    const velocity = Math.random() * (speed.max - speed.min) + speed.min;
+    const baseVelocity = Math.random() * (speed.max - speed.min) + speed.min;
+    const finalVelocity = baseVelocity * speedMultiplier;
     
     return {
       id: asteroidIdRef.current++,
       position,
       velocity: {
-        x: Math.cos(angle) * velocity,
-        y: Math.sin(angle) * velocity,
+        x: Math.cos(angle) * finalVelocity,
+        y: Math.sin(angle) * finalVelocity,
       },
       size,
       rotation: 0,
@@ -75,7 +80,19 @@ export const useAsteroidGameLogic = () => {
         position = { x: -50, y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT };
     }
     
-    return createAsteroid(position, 'large');
+    // Randomly select asteroid size with weighted probability
+    const sizeRandom = Math.random();
+    let size: 'large' | 'medium' | 'small';
+    
+    if (sizeRandom < 0.5) {
+      size = 'large';
+    } else if (sizeRandom < 0.8) {
+      size = 'medium';
+    } else {
+      size = 'small';
+    }
+    
+    return createAsteroid(position, size);
   };
 
   const spawnAsteroid = useCallback(() => {
@@ -258,7 +275,7 @@ export const useAsteroidGameLogic = () => {
           );
           
           if (distance < asteroidSize / 2) {
-            // Remove bullet and asteroid
+            // Remove bullet and asteroid (no splitting)
             newBullets.splice(i, 1);
             newAsteroids.splice(j, 1);
             
