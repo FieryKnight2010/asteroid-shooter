@@ -1,4 +1,3 @@
-
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 800,
   CANVAS_HEIGHT: 600,
@@ -18,9 +17,9 @@ export const GAME_CONSTANTS = {
   
   // Asteroids
   ASTEROID_SPEEDS: {
-    large: { min: 0.5, max: 1.5 },
-    medium: { min: 1, max: 2.5 },
-    small: { min: 1.5, max: 3 }
+    large: { min: 0.3, max: 0.8 },
+    medium: { min: 0.5, max: 1.2 },
+    small: { min: 0.8, max: 1.8 }
   },
   ASTEROID_SIZES: {
     large: 40,
@@ -31,9 +30,9 @@ export const GAME_CONSTANTS = {
   // Asteroid types
   ASTEROID_TYPES: {
     normal: { health: 1, speedMultiplier: 1, points: 1 },
-    fast: { health: 1, speedMultiplier: 2, points: 2 },
+    fast: { health: 1, speedMultiplier: 1.5, points: 2 },
     armored: { health: 3, speedMultiplier: 0.7, points: 3 },
-    explosive: { health: 1, speedMultiplier: 1.2, points: 2 }
+    explosive: { health: 1, speedMultiplier: 1.1, points: 2 }
   },
   
   // Game progression
