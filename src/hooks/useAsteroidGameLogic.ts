@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position } from '../types/asteroidGame';
@@ -203,18 +202,29 @@ export const useAsteroidGameLogic = () => {
   }, []);
 
   const shoot = useCallback(() => {
+    console.log('Shoot function called');
     setGameState(prev => {
+      console.log('Current game state:', {
+        bulletsCount: prev.bullets.length,
+        maxBullets: GAME_CONSTANTS.MAX_BULLETS,
+        gameOver: prev.gameOver,
+        gameStarted: prev.gameStarted
+      });
+
       if (prev.bullets.length >= GAME_CONSTANTS.MAX_BULLETS || prev.gameOver || !prev.gameStarted) {
+        console.log('Cannot shoot - conditions not met');
         return prev;
       }
 
       // Basic fire rate control
       if (fireRateTimerRef.current < 15) {
+        console.log('Fire rate limited, timer:', fireRateTimerRef.current);
         fireRateTimerRef.current++;
         return prev;
       }
       
       fireRateTimerRef.current = 0;
+      console.log('Creating new bullet');
 
       const { spaceship } = prev;
       const backOffset = GAME_CONSTANTS.SPACESHIP_SIZE / 2;
@@ -230,6 +240,8 @@ export const useAsteroidGameLogic = () => {
         },
         lifespan: GAME_CONSTANTS.BULLET_LIFESPAN,
       };
+
+      console.log('New bullet created:', newBullet);
 
       return {
         ...prev,

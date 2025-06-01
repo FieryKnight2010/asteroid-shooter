@@ -16,6 +16,7 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
   });
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    console.log('Key pressed:', event.code);
     switch (event.code) {
       case 'KeyA':
         event.preventDefault();
@@ -35,6 +36,7 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         break;
       case 'Space':
         event.preventDefault();
+        console.log('Space key pressed - calling shoot function');
         shoot();
         break;
       case 'KeyP':
