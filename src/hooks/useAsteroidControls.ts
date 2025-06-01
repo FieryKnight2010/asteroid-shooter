@@ -27,11 +27,11 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         break;
       case 'KeyW':
         event.preventDefault();
-        setControls(prev => ({ ...prev, reverse: true }));
+        setControls(prev => ({ ...prev, thrust: true }));
         break;
       case 'KeyS':
         event.preventDefault();
-        setControls(prev => ({ ...prev, thrust: true }));
+        setControls(prev => ({ ...prev, reverse: true }));
         break;
       case 'Space':
         event.preventDefault();
@@ -53,10 +53,10 @@ export const useAsteroidControls = ({ shoot, pauseGame }: UseAsteroidControlsPro
         setControls(prev => ({ ...prev, right: false }));
         break;
       case 'KeyW':
-        setControls(prev => ({ ...prev, reverse: false }));
+        setControls(prev => ({ ...prev, thrust: false }));
         break;
       case 'KeyS':
-        setControls(prev => ({ ...prev, thrust: false }));
+        setControls(prev => ({ ...prev, reverse: false }));
         break;
     }
   }, []);
