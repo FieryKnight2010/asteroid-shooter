@@ -12,6 +12,7 @@ import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 const AsteroidGame = () => {
   const {
     gameState,
+    isInvulnerable,
     startGame,
     restartGame,
     pauseGame,
@@ -57,10 +58,12 @@ const AsteroidGame = () => {
       >
         {/* Spaceship */}
         {gameState.gameStarted && !gameState.gameOver && (
-          <Spaceship 
-            spaceship={gameState.spaceship}
-            isThrusting={controls.thrust}
-          />
+          <div className={isInvulnerable ? 'animate-pulse' : ''}>
+            <Spaceship 
+              spaceship={gameState.spaceship}
+              isThrusting={controls.thrust}
+            />
+          </div>
         )}
         
         {/* Bullets */}

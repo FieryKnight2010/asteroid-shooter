@@ -27,16 +27,37 @@ const createInitialGameState = (): GameState => ({
 
 export const useAsteroidGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
+  const [isInvulnerable, setIsInvulnerable] = useState(false);
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
   const spawnTimerRef = useRef(0);
   const gameStartTimeRef = useRef(0);
+  const respawnTimerRef = useRef<number>();
+  const invulnerabilityTimerRef = useRef<number>();
 
   const wrapPosition = (position: Position): Position => ({
     x: ((position.x % GAME_CONSTANTS.CANVAS_WIDTH) + GAME_CONSTANTS.CANVAS_WIDTH) % GAME_CONSTANTS.CANVAS_WIDTH,
     y: ((position.y % GAME_CONSTANTS.CANVAS_HEIGHT) + GAME_CONSTANTS.CANVAS_HEIGHT) % GAME_CONSTANTS.CANVAS_HEIGHT,
   });
+
+  const makeInvulnerable = useCallback(() => {
+    setIsInvulnerable(true);
+    if (invulnerabilityTimerRef.current) {
+      clearTimeout(invulnerabilityTimerRef.current);
+    }
+    invulnerabilityTimerRef.current = setTimeout(() => {
+      setIsInvulnerable(false);
+    }, 2000); // 2 seconds of invulnerability
+  }, []);
+
+  const respawnSpaceship = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      spaceship: createInitialSpaceship(),
+    }));
+    makeInvulnerable();
+  }, [makeInvulnerable]);
 
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small'): Asteroid => {
     // Calculate speed multiplier based on game time
@@ -129,10 +150,17 @@ export const useAsteroidGameLogic = () => {
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
     setGameState(newGameState);
+    setIsInvulnerable(false);
     toast.success("Game started! Destroy the asteroids!");
   }, []);
 
   const restartGame = useCallback(() => {
+    if (respawnTimerRef.current) {
+      clearTimeout(respawnTimerRef.current);
+    }
+    if (invulnerabilityTimerRef.current) {
+      clearTimeout(invulnerabilityTimerRef.current);
+    }
     startGame();
   }, [startGame]);
 
@@ -287,23 +315,32 @@ export const useAsteroidGameLogic = () => {
         }
       }
 
-      // Spaceship-asteroid collisions
-      for (const asteroid of newAsteroids) {
-        const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
-        const distance = Math.sqrt(
-          (prev.spaceship.position.x - asteroid.position.x) ** 2 +
-          (prev.spaceship.position.y - asteroid.position.y) ** 2
-        );
-        
-        if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
-          newLives--;
-          if (newLives <= 0) {
-            gameOver = true;
-            toast.error(`Game Over! Final Score: ${newScore}`);
-          } else {
-            toast.warning(`Hit! Lives remaining: ${newLives}`);
+      // Spaceship-asteroid collisions (only if not invulnerable)
+      if (!isInvulnerable) {
+        for (const asteroid of newAsteroids) {
+          const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
+          const distance = Math.sqrt(
+            (prev.spaceship.position.x - asteroid.position.x) ** 2 +
+            (prev.spaceship.position.y - asteroid.position.y) ** 2
+          );
+          
+          if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
+            newLives--;
+            if (newLives <= 0) {
+              gameOver = true;
+              toast.error(`Game Over! Final Score: ${newScore}`);
+            } else {
+              toast.warning(`Hit! Lives remaining: ${newLives}`);
+              // Schedule respawn after a brief delay
+              if (respawnTimerRef.current) {
+                clearTimeout(respawnTimerRef.current);
+              }
+              respawnTimerRef.current = setTimeout(() => {
+                respawnSpaceship();
+              }, 1000); // 1 second delay before respawn
+            }
+            break;
           }
-          break;
         }
       }
 
@@ -314,13 +351,13 @@ export const useAsteroidGameLogic = () => {
         score: newScore,
         lives: newLives,
         gameOver,
-        spaceship: gameOver ? createInitialSpaceship() : prev.spaceship,
       };
     });
-  }, []);
+  }, [isInvulnerable, respawnSpaceship]);
 
   return {
     gameState,
+    isInvulnerable,
     startGame,
     restartGame,
     pauseGame,
