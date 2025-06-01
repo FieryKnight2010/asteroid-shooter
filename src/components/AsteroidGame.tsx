@@ -13,6 +13,7 @@ const AsteroidGame = () => {
   const {
     gameState,
     isInvulnerable,
+    spaceshipVisible,
     startGame,
     restartGame,
     pauseGame,
@@ -57,7 +58,7 @@ const AsteroidGame = () => {
         onClick={handleClick}
       >
         {/* Spaceship */}
-        {gameState.gameStarted && !gameState.gameOver && (
+        {gameState.gameStarted && !gameState.gameOver && spaceshipVisible && (
           <div className={isInvulnerable ? 'animate-pulse' : ''}>
             <Spaceship 
               spaceship={gameState.spaceship}

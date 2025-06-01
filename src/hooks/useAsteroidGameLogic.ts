@@ -28,6 +28,7 @@ const createInitialGameState = (): GameState => ({
 export const useAsteroidGameLogic = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [isInvulnerable, setIsInvulnerable] = useState(false);
+  const [spaceshipVisible, setSpaceshipVisible] = useState(true);
   const gameLoopRef = useRef<number>();
   const bulletIdRef = useRef(0);
   const asteroidIdRef = useRef(0);
@@ -56,8 +57,42 @@ export const useAsteroidGameLogic = () => {
       ...prev,
       spaceship: createInitialSpaceship(),
     }));
+    setSpaceshipVisible(true);
     makeInvulnerable();
   }, [makeInvulnerable]);
+
+  const handleSpaceshipHit = useCallback(() => {
+    setGameState(prev => {
+      const newLives = prev.lives - 1;
+      
+      if (newLives <= 0) {
+        toast.error(`Game Over! Final Score: ${prev.score}`);
+        return {
+          ...prev,
+          lives: 0,
+          gameOver: true,
+        };
+      } else {
+        toast.warning(`Hit! Lives remaining: ${newLives}`);
+        
+        // Hide spaceship immediately
+        setSpaceshipVisible(false);
+        
+        // Schedule respawn after a brief delay
+        if (respawnTimerRef.current) {
+          clearTimeout(respawnTimerRef.current);
+        }
+        respawnTimerRef.current = setTimeout(() => {
+          respawnSpaceship();
+        }, 1000); // 1 second delay before respawn
+        
+        return {
+          ...prev,
+          lives: newLives,
+        };
+      }
+    });
+  }, [respawnSpaceship]);
 
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small'): Asteroid => {
     // Calculate speed multiplier based on game time
@@ -151,6 +186,7 @@ export const useAsteroidGameLogic = () => {
     spawnTimerRef.current = 0;
     setGameState(newGameState);
     setIsInvulnerable(false);
+    setSpaceshipVisible(true);
     toast.success("Game started! Destroy the asteroids!");
   }, []);
 
@@ -286,8 +322,6 @@ export const useAsteroidGameLogic = () => {
       let newBullets = [...prev.bullets];
       let newAsteroids = [...prev.asteroids];
       let newScore = prev.score;
-      let newLives = prev.lives;
-      let gameOver = false;
 
       // Bullet-asteroid collisions
       for (let i = newBullets.length - 1; i >= 0; i--) {
@@ -315,8 +349,8 @@ export const useAsteroidGameLogic = () => {
         }
       }
 
-      // Spaceship-asteroid collisions (only if not invulnerable)
-      if (!isInvulnerable) {
+      // Spaceship-asteroid collisions (only if not invulnerable and spaceship is visible)
+      if (!isInvulnerable && spaceshipVisible && !prev.gameOver) {
         for (const asteroid of newAsteroids) {
           const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
           const distance = Math.sqrt(
@@ -325,21 +359,9 @@ export const useAsteroidGameLogic = () => {
           );
           
           if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
-            newLives--;
-            if (newLives <= 0) {
-              gameOver = true;
-              toast.error(`Game Over! Final Score: ${newScore}`);
-            } else {
-              toast.warning(`Hit! Lives remaining: ${newLives}`);
-              // Schedule respawn after a brief delay
-              if (respawnTimerRef.current) {
-                clearTimeout(respawnTimerRef.current);
-              }
-              respawnTimerRef.current = setTimeout(() => {
-                respawnSpaceship();
-              }, 1000); // 1 second delay before respawn
-            }
-            break;
+            // Trigger hit handling
+            handleSpaceshipHit();
+            break; // Only process one collision per frame
           }
         }
       }
@@ -349,15 +371,14 @@ export const useAsteroidGameLogic = () => {
         bullets: newBullets,
         asteroids: newAsteroids,
         score: newScore,
-        lives: newLives,
-        gameOver,
       };
     });
-  }, [isInvulnerable, respawnSpaceship]);
+  }, [isInvulnerable, spaceshipVisible, handleSpaceshipHit]);
 
   return {
     gameState,
     isInvulnerable,
+    spaceshipVisible,
     startGame,
     restartGame,
     pauseGame,
