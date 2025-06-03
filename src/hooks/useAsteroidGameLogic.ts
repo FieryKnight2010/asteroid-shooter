@@ -124,8 +124,11 @@ export const useAsteroidGameLogic = () => {
 
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
-    const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
-    const speedMultiplier = 1 + (timeElapsed * 0.05);
+    // Ensure gameStartTimeRef is properly initialized and prevent negative or extremely large values
+    const startTime = gameStartTimeRef.current || currentTime;
+    const timeElapsed = Math.max(0, (currentTime - startTime) / 1000);
+    // Cap the speed multiplier to prevent insanely fast asteroids
+    const speedMultiplier = 1 + Math.min(timeElapsed * 0.02, 2); // Reduced from 0.05 and capped at 3x max
     
     let asteroidType = type;
     if (!asteroidType) {
@@ -218,6 +221,7 @@ export const useAsteroidGameLogic = () => {
     const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
     newGameState.asteroids = [createRandomAsteroid()];
+    // Ensure gameStartTimeRef is properly set
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
     setGameState(newGameState);
