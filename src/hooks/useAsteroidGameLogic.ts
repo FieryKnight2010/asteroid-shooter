@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
@@ -254,7 +255,7 @@ export const useAsteroidGameLogic = () => {
       const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
       const baseSpawnRate = 180;
       const minSpawnRate = 30;
-      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 2);
+      const spawnRate = Math.max(minSpawnRate, baseSpawnRate - timeElapsed * 1); // Reduced from 2 to 1
 
       spawnTimerRef.current++;
       
