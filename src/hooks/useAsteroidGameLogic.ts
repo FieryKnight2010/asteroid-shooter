@@ -66,14 +66,30 @@ export const useAsteroidGameLogic = () => {
       
       if (distance < well.radius && distance > 0) {
         // Much gentler gravity force with better falloff
-        const force = well.strength / (effectiveDistance * effectiveDistance) * 100; // Reduced from 200
+        const force = well.strength / (effectiveDistance * effectiveDistance) * 100;
         const forceX = (dx / effectiveDistance) * force;
         const forceY = (dy / effectiveDistance) * force;
         
         newVelocity.x += forceX;
         newVelocity.y += forceY;
         
-        // No damping - let objects naturally orbit or pass through
+        // Add tangential force to create more curved trajectories
+        // This force is perpendicular to the radial direction
+        const tangentialForce = force * 0.4; // Adjust this multiplier to control curve intensity
+        const tangentialX = -dy / effectiveDistance * tangentialForce;
+        const tangentialY = dx / effectiveDistance * tangentialForce;
+        
+        // Apply tangential force based on current velocity direction
+        // This creates a swirling effect
+        const velocityMagnitude = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
+        if (velocityMagnitude > 0.1) {
+          // Determine rotation direction based on cross product
+          const crossProduct = velocity.x * dy - velocity.y * dx;
+          const rotationSign = crossProduct > 0 ? 1 : -1;
+          
+          newVelocity.x += tangentialX * rotationSign;
+          newVelocity.y += tangentialY * rotationSign;
+        }
       }
     });
     
