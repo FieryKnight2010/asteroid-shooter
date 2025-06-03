@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAsteroidGameLogic } from '../hooks/useAsteroidGameLogic';
 import { useAsteroidControls } from '../hooks/useAsteroidControls';
@@ -7,6 +6,7 @@ import { useParticleSystem } from '../hooks/useParticleSystem';
 import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
+import GravityWell from './GravityWell';
 import AsteroidGameUI from './AsteroidGameUI';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
@@ -24,6 +24,7 @@ const AsteroidGame = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
+    updateGravityWells,
     checkCollisions,
     gameLoopRef,
   } = useAsteroidGameLogic();
@@ -38,6 +39,7 @@ const AsteroidGame = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
+    updateGravityWells,
     checkCollisions,
     gameLoopRef,
     updateParticles,
@@ -66,6 +68,11 @@ const AsteroidGame = () => {
       >
         {/* Starfield Background */}
         <Starfield />
+        
+        {/* Gravity Wells */}
+        {gameState.gravityWells.map(gravityWell => (
+          <GravityWell key={gravityWell.id} gravityWell={gravityWell} />
+        ))}
         
         {/* Spaceship */}
         {gameState.gameStarted && !gameState.gameOver && spaceshipVisible && (
@@ -107,6 +114,9 @@ const AsteroidGame = () => {
         </p>
         <p className="text-xs mt-1">
           Powerups: Yellow=Rapid Fire, Cyan=Shield, Pink=Extra Life
+        </p>
+        <p className="text-xs mt-1 text-purple-300">
+          Purple gravity wells pull objects toward them temporarily
         </p>
       </div>
     </div>

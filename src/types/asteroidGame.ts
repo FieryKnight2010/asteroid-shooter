@@ -35,6 +35,15 @@ export interface Asteroid {
   maxHealth: number;
 }
 
+export interface GravityWell {
+  id: number;
+  position: Position;
+  strength: number;
+  radius: number;
+  lifespan: number;
+  maxLifespan: number;
+}
+
 export interface PowerupState {
   rapidFire: number; // frames remaining
   shield: number; // frames remaining
@@ -44,6 +53,7 @@ export interface GameState {
   spaceship: Spaceship;
   bullets: Bullet[];
   asteroids: Asteroid[];
+  gravityWells: GravityWell[];
   score: number;
   level: number;
   lives: number;

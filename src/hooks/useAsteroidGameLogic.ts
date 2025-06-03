@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState } from '../types/asteroidGame';
+import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 
 const createInitialSpaceship = (): Spaceship => ({
@@ -22,6 +22,7 @@ const createInitialGameState = (): GameState => ({
   spaceship: createInitialSpaceship(),
   bullets: [],
   asteroids: [],
+  gravityWells: [],
   score: 0,
   level: 1,
   lives: GAME_CONSTANTS.INITIAL_LIVES,
@@ -43,6 +44,8 @@ export const useAsteroidGameLogic = () => {
   const gameStartTimeRef = useRef(0);
   const respawnTimerRef = useRef<NodeJS.Timeout>();
   const invulnerabilityTimerRef = useRef<NodeJS.Timeout>();
+  const gravityWellIdRef = useRef(0);
+  const gravityWellSpawnTimerRef = useRef(0);
 
   const wrapPosition = (position: Position): Position => ({
     x: ((position.x % GAME_CONSTANTS.CANVAS_WIDTH) + GAME_CONSTANTS.CANVAS_WIDTH) % GAME_CONSTANTS.CANVAS_WIDTH,
@@ -217,6 +220,43 @@ export const useAsteroidGameLogic = () => {
     });
   }, []);
 
+  const createGravityWell = (): GravityWell => {
+    const position = {
+      x: Math.random() * GAME_CONSTANTS.CANVAS_WIDTH,
+      y: Math.random() * GAME_CONSTANTS.CANVAS_HEIGHT,
+    };
+    
+    return {
+      id: gravityWellIdRef.current++,
+      position,
+      strength: 0.3 + Math.random() * 0.4, // Random strength between 0.3 and 0.7
+      radius: 60 + Math.random() * 40, // Random radius between 60 and 100
+      lifespan: 600 + Math.random() * 300, // 10-15 seconds at 60fps
+      maxLifespan: 600 + Math.random() * 300,
+    };
+  };
+
+  const applyGravityWells = (position: Position, velocity: Velocity): Velocity => {
+    let newVelocity = { ...velocity };
+    
+    gameState.gravityWells.forEach(well => {
+      const dx = well.position.x - position.x;
+      const dy = well.position.y - position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < well.radius && distance > 0) {
+        const force = well.strength / (distance * distance) * 100;
+        const forceX = (dx / distance) * force;
+        const forceY = (dy / distance) * force;
+        
+        newVelocity.x += forceX;
+        newVelocity.y += forceY;
+      }
+    });
+    
+    return newVelocity;
+  };
+
   const startGame = useCallback(() => {
     const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
@@ -224,6 +264,7 @@ export const useAsteroidGameLogic = () => {
     // Ensure gameStartTimeRef is properly set
     gameStartTimeRef.current = Date.now();
     spawnTimerRef.current = 0;
+    gravityWellSpawnTimerRef.current = 0;
     setGameState(newGameState);
     setIsInvulnerable(false);
     setSpaceshipVisible(true);
@@ -335,6 +376,9 @@ export const useAsteroidGameLogic = () => {
         newVelocity.y = (newVelocity.y / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
       }
 
+      // Apply gravity wells to spaceship
+      newVelocity = applyGravityWells(spaceship.position, newVelocity);
+
       const newPosition = {
         x: spaceship.position.x + newVelocity.x,
         y: spaceship.position.y + newVelocity.y,
@@ -358,14 +402,18 @@ export const useAsteroidGameLogic = () => {
     setGameState(prev => ({
       ...prev,
       bullets: prev.bullets
-        .map(bullet => ({
-          ...bullet,
-          position: wrapPosition({
-            x: bullet.position.x + bullet.velocity.x,
-            y: bullet.position.y + bullet.velocity.y,
-          }),
-          lifespan: bullet.lifespan - 1,
-        }))
+        .map(bullet => {
+          const gravityAffectedVelocity = applyGravityWells(bullet.position, bullet.velocity);
+          return {
+            ...bullet,
+            position: wrapPosition({
+              x: bullet.position.x + gravityAffectedVelocity.x,
+              y: bullet.position.y + gravityAffectedVelocity.y,
+            }),
+            velocity: gravityAffectedVelocity,
+            lifespan: bullet.lifespan - 1,
+          };
+        })
         .filter(bullet => bullet.lifespan > 0),
     }));
   }, []);
@@ -373,18 +421,56 @@ export const useAsteroidGameLogic = () => {
   const updateAsteroids = useCallback(() => {
     setGameState(prev => ({
       ...prev,
-      asteroids: prev.asteroids.map(asteroid => ({
-        ...asteroid,
-        position: wrapPosition({
-          x: asteroid.position.x + asteroid.velocity.x,
-          y: asteroid.position.y + asteroid.velocity.y,
-        }),
-        rotation: asteroid.rotation + asteroid.rotationSpeed,
-      })),
+      asteroids: prev.asteroids.map(asteroid => {
+        const gravityAffectedVelocity = applyGravityWells(asteroid.position, asteroid.velocity);
+        return {
+          ...asteroid,
+          position: wrapPosition({
+            x: asteroid.position.x + gravityAffectedVelocity.x,
+            y: asteroid.position.y + gravityAffectedVelocity.y,
+          }),
+          velocity: gravityAffectedVelocity,
+          rotation: asteroid.rotation + asteroid.rotationSpeed,
+        };
+      }),
     }));
     
     spawnAsteroid();
   }, [spawnAsteroid]);
+
+  const updateGravityWells = useCallback(() => {
+    setGameState(prev => {
+      if (!prev.gameStarted || prev.gameOver || prev.paused) {
+        return prev;
+      }
+
+      // Spawn new gravity wells occasionally
+      gravityWellSpawnTimerRef.current++;
+      let newGravityWells = [...prev.gravityWells];
+      
+      // Spawn a new gravity well every 15-20 seconds (900-1200 frames at 60fps)
+      const spawnRate = 900 + Math.random() * 300;
+      if (gravityWellSpawnTimerRef.current >= spawnRate && newGravityWells.length < 3) {
+        gravityWellSpawnTimerRef.current = 0;
+        const newWell = createGravityWell();
+        newWell.maxLifespan = newWell.lifespan; // Set maxLifespan for opacity calculation
+        newGravityWells.push(newWell);
+      }
+
+      // Update existing gravity wells
+      newGravityWells = newGravityWells
+        .map(well => ({
+          ...well,
+          lifespan: well.lifespan - 1,
+        }))
+        .filter(well => well.lifespan > 0);
+
+      return {
+        ...prev,
+        gravityWells: newGravityWells,
+      };
+    });
+  }, []);
 
   const checkCollisions = useCallback((createExplosion?: (x: number, y: number, color?: string, count?: number) => void) => {
     setGameState(prev => {
@@ -508,6 +594,7 @@ export const useAsteroidGameLogic = () => {
     updateSpaceship,
     updateBullets,
     updateAsteroids,
+    updateGravityWells,
     checkCollisions,
     gameLoopRef,
   };
