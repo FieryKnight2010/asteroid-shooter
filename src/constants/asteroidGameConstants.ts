@@ -10,8 +10,8 @@ export const GAME_CONSTANTS = {
   SPACESHIP_FRICTION: 0.98,
   
   // Bullets
-  BULLET_SPEED: 10,
-  BULLET_LIFESPAN: 60, // frames
+  BULLET_SPEED: 15, // Increased from 10
+  BULLET_LIFESPAN: 120, // Increased from 60 frames (doubled range)
   BULLET_SIZE: 3,
   MAX_BULLETS: 20,
   
