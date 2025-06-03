@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
@@ -61,27 +60,25 @@ export const useAsteroidGameLogic = () => {
       const dy = well.position.y - position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      // Add minimum distance to prevent infinite force at center
+      const minDistance = 15; // Minimum distance to prevent getting stuck
+      const effectiveDistance = Math.max(distance, minDistance);
+      
       if (distance < well.radius && distance > 0) {
-        // Gravity force calculation
-        const force = well.strength / (distance * distance) * 200; // Reduced from 500
-        const forceX = (dx / distance) * force;
-        const forceY = (dy / distance) * force;
+        // Much gentler gravity force with better falloff
+        const force = well.strength / (effectiveDistance * effectiveDistance) * 100; // Reduced from 200
+        const forceX = (dx / effectiveDistance) * force;
+        const forceY = (dy / effectiveDistance) * force;
         
         newVelocity.x += forceX;
         newVelocity.y += forceY;
         
-        // Much gentler damping that doesn't cause objects to get stuck
-        // Only apply minimal damping when very close to center
-        if (distance < well.radius * 0.3) {
-          const dampingFactor = 0.95; // Very light damping only near center
-          newVelocity.x *= dampingFactor;
-          newVelocity.y *= dampingFactor;
-        }
+        // No damping - let objects naturally orbit or pass through
       }
     });
     
     // Cap velocity to prevent objects from moving too fast after gravity well effects
-    const maxVelocity = 6; // Reduced from 8 for better control
+    const maxVelocity = 5; // Further reduced for smoother gameplay
     const currentSpeed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
     if (currentSpeed > maxVelocity) {
       newVelocity.x = (newVelocity.x / currentSpeed) * maxVelocity;
