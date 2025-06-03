@@ -52,6 +52,27 @@ export const useAsteroidGameLogic = () => {
     y: ((position.y % GAME_CONSTANTS.CANVAS_HEIGHT) + GAME_CONSTANTS.CANVAS_HEIGHT) % GAME_CONSTANTS.CANVAS_HEIGHT,
   });
 
+  const applyGravityWells = useCallback((position: Position, velocity: Velocity): Velocity => {
+    let newVelocity = { ...velocity };
+    
+    gameState.gravityWells.forEach(well => {
+      const dx = well.position.x - position.x;
+      const dy = well.position.y - position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < well.radius && distance > 0) {
+        const force = well.strength / (distance * distance) * 100;
+        const forceX = (dx / distance) * force;
+        const forceY = (dy / distance) * force;
+        
+        newVelocity.x += forceX;
+        newVelocity.y += forceY;
+      }
+    });
+    
+    return newVelocity;
+  }, [gameState.gravityWells]);
+
   const makeInvulnerable = useCallback(() => {
     setIsInvulnerable(true);
     if (invulnerabilityTimerRef.current) {
@@ -236,27 +257,6 @@ export const useAsteroidGameLogic = () => {
     };
   };
 
-  const applyGravityWells = (position: Position, velocity: Velocity): Velocity => {
-    let newVelocity = { ...velocity };
-    
-    gameState.gravityWells.forEach(well => {
-      const dx = well.position.x - position.x;
-      const dy = well.position.y - position.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance < well.radius && distance > 0) {
-        const force = well.strength / (distance * distance) * 100;
-        const forceX = (dx / distance) * force;
-        const forceY = (dy / distance) * force;
-        
-        newVelocity.x += forceX;
-        newVelocity.y += forceY;
-      }
-    });
-    
-    return newVelocity;
-  };
-
   const startGame = useCallback(() => {
     const newGameState = createInitialGameState();
     newGameState.gameStarted = true;
@@ -396,7 +396,7 @@ export const useAsteroidGameLogic = () => {
         powerups: newPowerups,
       };
     });
-  }, []);
+  }, [applyGravityWells]);
 
   const updateBullets = useCallback(() => {
     setGameState(prev => ({
@@ -416,7 +416,7 @@ export const useAsteroidGameLogic = () => {
         })
         .filter(bullet => bullet.lifespan > 0),
     }));
-  }, []);
+  }, [applyGravityWells]);
 
   const updateAsteroids = useCallback(() => {
     setGameState(prev => ({
@@ -436,7 +436,7 @@ export const useAsteroidGameLogic = () => {
     }));
     
     spawnAsteroid();
-  }, [spawnAsteroid]);
+  }, [spawnAsteroid, applyGravityWells]);
 
   const updateGravityWells = useCallback(() => {
     setGameState(prev => {
