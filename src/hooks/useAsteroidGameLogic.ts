@@ -613,8 +613,9 @@ export const useAsteroidGameLogic = () => {
       }
 
       // Spaceship-asteroid collisions (direct contact)
-      if (!spaceshipHit && !isInvulnerable && !prev.powerups.shield && spaceshipVisible && !prev.gameOver) {
-        for (const asteroid of newAsteroids) {
+      if (!isInvulnerable && spaceshipVisible && !prev.gameOver) {
+        for (let j = newAsteroids.length - 1; j >= 0; j--) {
+          const asteroid = newAsteroids[j];
           const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
           const distance = Math.sqrt(
             (prev.spaceship.position.x - asteroid.position.x) ** 2 +
@@ -622,13 +623,24 @@ export const useAsteroidGameLogic = () => {
           );
           
           if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2)) {
-            spaceshipHit = true;
+            // Check if it's a powerup asteroid
+            if (['rapidFire', 'shield', 'extraLife'].includes(asteroid.type)) {
+              // Remove the powerup asteroid and activate the powerup
+              newAsteroids.splice(j, 1);
+              activatePowerup(asteroid.type as 'rapidFire' | 'shield' | 'extraLife');
+              if (createExplosion) {
+                createExplosion(asteroid.position.x, asteroid.position.y, '#ffffff', 10);
+              }
+            } else if (!prev.powerups.shield) {
+              // Only take damage if it's not a powerup asteroid and no shield
+              spaceshipHit = true;
+            }
             break;
           }
         }
       }
 
-      // Handle spaceship hit (either from explosion or direct contact)
+      // Handle spaceship hit (either from explosion or direct contact with non-powerup asteroids)
       if (spaceshipHit && !prev.powerups.shield) {
         handleSpaceshipHit();
       }
