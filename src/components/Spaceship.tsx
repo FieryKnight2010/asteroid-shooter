@@ -7,9 +7,10 @@ interface SpaceshipProps {
   spaceship: SpaceshipType;
   isThrusting: boolean;
   hasShield?: boolean;
+  hasLaser?: boolean;
 }
 
-const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield = false }) => {
+const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield = false, hasLaser = false }) => {
   const { position, rotation } = spaceship;
   const size = GAME_CONSTANTS.SPACESHIP_SIZE;
 
@@ -22,7 +23,7 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield
         width: size,
         height: size,
         transform: `rotate(${rotation + Math.PI / 2}rad)`,
-        filter: 'drop-shadow(0 0 6px rgba(0, 255, 255, 0.4))',
+        filter: `drop-shadow(0 0 6px ${hasLaser ? 'rgba(255, 0, 64, 0.6)' : 'rgba(0, 255, 255, 0.4)'})`,
       }}
     >
       {/* Shield effect */}
@@ -35,6 +36,20 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield
             left: -size * 0.4,
             top: -size * 0.4,
             boxShadow: '0 0 15px rgba(0, 255, 255, 0.6)',
+          }}
+        />
+      )}
+      
+      {/* Laser effect */}
+      {hasLaser && (
+        <div
+          className="absolute inset-0 rounded-full border-2 border-red-500 animate-pulse"
+          style={{
+            width: size * 1.5,
+            height: size * 1.5,
+            left: -size * 0.25,
+            top: -size * 0.25,
+            boxShadow: '0 0 20px rgba(255, 0, 64, 0.8)',
           }}
         />
       )}
@@ -67,7 +82,7 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield
           <polygon
             points="12,2 16,8 15,16 9,16 8,8"
             fill="url(#hullGradient)"
-            stroke="#00ccff"
+            stroke={hasLaser ? "#ff0040" : "#00ccff"}
             strokeWidth="0.5"
           />
           
@@ -117,7 +132,7 @@ const Spaceship: React.FC<SpaceshipProps> = ({ spaceship, isThrusting, hasShield
           <circle cx="6" cy="13" r="1" fill="#ff4400" opacity="0.8" />
           <circle cx="18" cy="13" r="1" fill="#ff4400" opacity="0.8" />
           
-          <circle cx="8" cy="10" r="0.5" fill="#ff0000" className="animate-pulse" />
+          <circle cx="8" cy="10" r="0.5" fill={hasLaser ? "#ff0040" : "#ff0000"} className="animate-pulse" />
           <circle cx="16" cy="10" r="0.5" fill="#00ff00" className="animate-pulse" />
           
           <line x1="12" y1="4" x2="12" y2="14" stroke="#66ddff" strokeWidth="0.5" opacity="0.7" />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAsteroidGameLogic } from '../hooks/useAsteroidGameLogic';
 import { useAsteroidControls } from '../hooks/useAsteroidControls';
@@ -7,6 +8,7 @@ import Spaceship from './Spaceship';
 import Asteroid from './Asteroid';
 import Bullet from './Bullet';
 import GravityWell from './GravityWell';
+import DroppedItem from './DroppedItem';
 import AsteroidGameUI from './AsteroidGameUI';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
@@ -25,6 +27,7 @@ const AsteroidGame = () => {
     updateBullets,
     updateAsteroids,
     updateGravityWells,
+    updateDroppedItems,
     checkCollisions,
     gameLoopRef,
   } = useAsteroidGameLogic();
@@ -40,6 +43,7 @@ const AsteroidGame = () => {
     updateBullets,
     updateAsteroids,
     updateGravityWells,
+    updateDroppedItems,
     checkCollisions,
     gameLoopRef,
     updateParticles,
@@ -74,6 +78,11 @@ const AsteroidGame = () => {
           <GravityWell key={gravityWell.id} gravityWell={gravityWell} />
         ))}
         
+        {/* Dropped Items */}
+        {gameState.droppedItems.map(item => (
+          <DroppedItem key={item.id} item={item} />
+        ))}
+        
         {/* Spaceship */}
         {gameState.gameStarted && !gameState.gameOver && spaceshipVisible && (
           <div className={isInvulnerable ? 'animate-pulse' : ''}>
@@ -81,6 +90,7 @@ const AsteroidGame = () => {
               spaceship={gameState.spaceship}
               isThrusting={controls.thrust}
               hasShield={gameState.powerups.shield > 0}
+              hasLaser={gameState.powerups.laser > 0}
             />
           </div>
         )}
@@ -113,7 +123,7 @@ const AsteroidGame = () => {
           Asteroid types: Green=Fast, Gray=Armored (3 hits), Orange=Explosive
         </p>
         <p className="text-xs mt-1">
-          Powerups: Yellow=Rapid Fire, Cyan=Shield, Pink=Extra Life
+          Powerups: Yellow=Rapid Fire, Cyan=Shield, Pink=Extra Life, Red=Laser
         </p>
         <p className="text-xs mt-1 text-purple-300">
           Purple gravity wells pull objects toward them temporarily

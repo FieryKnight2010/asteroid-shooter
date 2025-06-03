@@ -1,5 +1,4 @@
 
-
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 800,
   CANVAS_HEIGHT: 600,
@@ -38,14 +37,20 @@ export const GAME_CONSTANTS = {
     homing: { health: 1, speedMultiplier: 0.6, points: 4 },
     rapidFire: { health: 1, speedMultiplier: 0.8, points: 5 },
     shield: { health: 1, speedMultiplier: 0.8, points: 5 },
-    extraLife: { health: 1, speedMultiplier: 0.8, points: 5 }
+    extraLife: { health: 1, speedMultiplier: 0.8, points: 5 },
+    laser: { health: 1, speedMultiplier: 0.8, points: 5 }
   },
   
   // Powerup durations (in frames)
   POWERUP_DURATIONS: {
     rapidFire: 600, // 10 seconds at 60fps
     shield: 480, // 8 seconds at 60fps
+    laser: 600, // 10 seconds at 60fps
   },
+  
+  // Dropped items
+  DROPPED_ITEM_LIFESPAN: 900, // 15 seconds at 60fps
+  LASER_DROP_CHANCE: 0.1, // 10% chance
   
   // Game progression
   INITIAL_LIVES: 3,
@@ -66,4 +71,3 @@ export const GAME_CONSTANTS = {
   // Explosion
   EXPLOSION_RADIUS: 100,
 } as const;
-

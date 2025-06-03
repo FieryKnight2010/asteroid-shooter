@@ -30,7 +30,7 @@ export interface Asteroid {
   size: 'large' | 'medium' | 'small';
   rotation: number;
   rotationSpeed: number;
-  type: 'normal' | 'fast' | 'armored' | 'explosive' | 'rapidFire' | 'shield' | 'extraLife' | 'homing';
+  type: 'normal' | 'fast' | 'armored' | 'explosive' | 'rapidFire' | 'shield' | 'extraLife' | 'homing' | 'laser';
   health: number;
   maxHealth: number;
 }
@@ -44,9 +44,18 @@ export interface GravityWell {
   maxLifespan: number;
 }
 
+export interface DroppedItem {
+  id: number;
+  position: Position;
+  type: 'laser';
+  lifespan: number;
+  maxLifespan: number;
+}
+
 export interface PowerupState {
   rapidFire: number; // frames remaining
   shield: number; // frames remaining
+  laser: number; // frames remaining
 }
 
 export interface GameState {
@@ -54,6 +63,7 @@ export interface GameState {
   bullets: Bullet[];
   asteroids: Asteroid[];
   gravityWells: GravityWell[];
+  droppedItems: DroppedItem[];
   score: number;
   level: number;
   lives: number;

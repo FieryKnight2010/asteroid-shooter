@@ -29,12 +29,14 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
         return { color: '#00ffff', glow: 'rgba(0, 255, 255, 0.6)', border: '#00aaaa' };
       case 'extraLife':
         return { color: '#ff00ff', glow: 'rgba(255, 0, 255, 0.6)', border: '#aa00aa' };
+      case 'laser':
+        return { color: '#ff0040', glow: 'rgba(255, 0, 64, 0.8)', border: '#cc0033' };
     }
   };
 
   const variant = getTypeVariant();
   const healthPercentage = health / maxHealth;
-  const isPowerup = ['rapidFire', 'shield', 'extraLife'].includes(type);
+  const isPowerup = ['rapidFire', 'shield', 'extraLife', 'laser'].includes(type);
 
   return (
     <div
@@ -104,7 +106,6 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
           </>
         )}
         
-        {/* Powerup symbols */}
         {type === 'rapidFire' && (
           <>
             <polygon points="15,12 18,8 22,8 25,12 22,16 18,16" fill="#ff0000" className="animate-pulse" />
@@ -127,6 +128,20 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
             <circle cx="18" cy="17" r="1" fill="#ffffff" />
             <circle cx="22" cy="17" r="1" fill="#ffffff" />
             <polygon points="17,21 20,23 23,21" fill="#ffffff" />
+          </>
+        )}
+        
+        {/* Laser powerup symbol */}
+        {type === 'laser' && (
+          <>
+            <rect x="18" y="10" width="4" height="20" fill="#ffffff" className="animate-pulse" />
+            <rect x="12" y="16" width="16" height="2" fill="#ffffff" className="animate-pulse" />
+            <rect x="12" y="22" width="16" height="2" fill="#ffffff" className="animate-pulse" />
+            <circle cx="20" cy="20" r="2" fill="#ff0040" opacity="0.8" className="animate-pulse" />
+            <circle cx="14" cy="14" r="1" fill="#ffffff" className="animate-pulse" />
+            <circle cx="26" cy="14" r="1" fill="#ffffff" className="animate-pulse" />
+            <circle cx="14" cy="26" r="1" fill="#ffffff" className="animate-pulse" />
+            <circle cx="26" cy="26" r="1" fill="#ffffff" className="animate-pulse" />
           </>
         )}
         
