@@ -62,25 +62,26 @@ export const useAsteroidGameLogic = () => {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance < well.radius && distance > 0) {
-        // Increased force multiplier from 100 to 500 for much stronger gravity
-        const force = well.strength / (distance * distance) * 500;
+        // Gravity force calculation
+        const force = well.strength / (distance * distance) * 200; // Reduced from 500
         const forceX = (dx / distance) * force;
         const forceY = (dy / distance) * force;
         
         newVelocity.x += forceX;
         newVelocity.y += forceY;
         
-        // Add damping effect to slow down objects within gravity well
-        // Objects closer to center experience more damping
-        const distanceRatio = distance / well.radius; // 0 at center, 1 at edge
-        const dampingFactor = 0.7 + (distanceRatio * 0.25); // 0.7 at center, 0.95 at edge
-        newVelocity.x *= dampingFactor;
-        newVelocity.y *= dampingFactor;
+        // Much gentler damping that doesn't cause objects to get stuck
+        // Only apply minimal damping when very close to center
+        if (distance < well.radius * 0.3) {
+          const dampingFactor = 0.95; // Very light damping only near center
+          newVelocity.x *= dampingFactor;
+          newVelocity.y *= dampingFactor;
+        }
       }
     });
     
     // Cap velocity to prevent objects from moving too fast after gravity well effects
-    const maxVelocity = 8; // Reasonable maximum speed
+    const maxVelocity = 6; // Reduced from 8 for better control
     const currentSpeed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
     if (currentSpeed > maxVelocity) {
       newVelocity.x = (newVelocity.x / currentSpeed) * maxVelocity;
