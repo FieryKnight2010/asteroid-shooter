@@ -34,7 +34,7 @@ export const GAME_CONSTANTS = {
     fast: { health: 1, speedMultiplier: 1.5, points: 2 },
     armored: { health: 3, speedMultiplier: 0.7, points: 3 },
     explosive: { health: 1, speedMultiplier: 1.1, points: 2 },
-    homing: { health: 2, speedMultiplier: 0.6, points: 4 },
+    homing: { health: 1, speedMultiplier: 0.6, points: 4 },
     rapidFire: { health: 1, speedMultiplier: 0.8, points: 5 },
     shield: { health: 1, speedMultiplier: 0.8, points: 5 },
     extraLife: { health: 1, speedMultiplier: 0.8, points: 5 }
