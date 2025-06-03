@@ -1,4 +1,3 @@
-
 export interface Position {
   x: number;
   y: number;
@@ -58,12 +57,21 @@ export interface PowerupState {
   laser: number; // frames remaining
 }
 
+export interface LaserBeam {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  duration: number; // frames to show the beam
+}
+
 export interface GameState {
   spaceship: Spaceship;
   bullets: Bullet[];
   asteroids: Asteroid[];
   gravityWells: GravityWell[];
   droppedItems: DroppedItem[];
+  laserBeam: LaserBeam | null;
   score: number;
   level: number;
   lives: number;

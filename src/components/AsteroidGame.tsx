@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAsteroidGameLogic } from '../hooks/useAsteroidGameLogic';
 import { useAsteroidControls } from '../hooks/useAsteroidControls';
@@ -12,6 +11,7 @@ import DroppedItem from './DroppedItem';
 import AsteroidGameUI from './AsteroidGameUI';
 import Starfield from './Starfield';
 import ParticleEffect from './ParticleEffect';
+import LaserBeam from './LaserBeam';
 import { GAME_CONSTANTS } from '../constants/asteroidGameConstants';
 
 const AsteroidGame = () => {
@@ -82,6 +82,11 @@ const AsteroidGame = () => {
         {gameState.droppedItems.map(item => (
           <DroppedItem key={item.id} item={item} />
         ))}
+        
+        {/* Laser Beam */}
+        {gameState.laserBeam && (
+          <LaserBeam laserBeam={gameState.laserBeam} />
+        )}
         
         {/* Spaceship */}
         {gameState.gameStarted && !gameState.gameOver && spaceshipVisible && (

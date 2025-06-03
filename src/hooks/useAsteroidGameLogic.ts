@@ -25,6 +25,7 @@ const createInitialGameState = (): GameState => ({
   asteroids: [],
   gravityWells: [],
   droppedItems: [],
+  laserBeam: null,
   score: 0,
   level: 1,
   lives: GAME_CONSTANTS.INITIAL_LIVES,
@@ -342,11 +343,80 @@ export const useAsteroidGameLogic = () => {
         gameOver: prev.gameOver,
         gameStarted: prev.gameStarted,
         fireRateTimer: fireRateTimerRef.current,
-        rapidFireActive: prev.powerups.rapidFire > 0
+        rapidFireActive: prev.powerups.rapidFire > 0,
+        laserActive: prev.powerups.laser > 0
       });
 
-      if (prev.bullets.length >= GAME_CONSTANTS.MAX_BULLETS || prev.gameOver || !prev.gameStarted) {
-        console.log('Cannot shoot - conditions not met');
+      if (prev.gameOver || !prev.gameStarted) {
+        console.log('Cannot shoot - game conditions not met');
+        return prev;
+      }
+
+      // Handle laser beam shooting
+      if (prev.powerups.laser > 0) {
+        const fireRateCooldown = 4; // Laser has its own cooldown
+        
+        if (fireRateTimerRef.current > 0) {
+          console.log('Laser fire rate limited, timer:', fireRateTimerRef.current);
+          return prev;
+        }
+        
+        fireRateTimerRef.current = fireRateCooldown;
+        console.log('Creating laser beam');
+
+        const { spaceship } = prev;
+        const startX = spaceship.position.x;
+        const startY = spaceship.position.y;
+        
+        // Calculate end point of laser beam
+        const endX = startX + Math.cos(spaceship.rotation) * GAME_CONSTANTS.LASER_BEAM_RANGE;
+        const endY = startY + Math.sin(spaceship.rotation) * GAME_CONSTANTS.LASER_BEAM_RANGE;
+        
+        // Check for asteroids in the laser path and destroy them
+        const destroyedAsteroids: number[] = [];
+        let newScore = prev.score;
+        
+        prev.asteroids.forEach((asteroid, index) => {
+          // Check if asteroid intersects with laser line
+          const distanceToLine = pointToLineDistance(
+            asteroid.position.x,
+            asteroid.position.y,
+            startX,
+            startY,
+            endX,
+            endY
+          );
+          
+          const asteroidRadius = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size] / 2;
+          
+          if (distanceToLine <= asteroidRadius) {
+            destroyedAsteroids.push(index);
+            const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroid.type];
+            const sizePoints = GAME_CONSTANTS.POINTS[asteroid.size];
+            newScore += sizePoints * typeData.points;
+          }
+        });
+        
+        // Remove destroyed asteroids
+        const newAsteroids = prev.asteroids.filter((_, index) => !destroyedAsteroids.includes(index));
+        
+        return {
+          ...prev,
+          laserBeam: {
+            startX,
+            startY,
+            endX,
+            endY,
+            duration: GAME_CONSTANTS.LASER_BEAM_DURATION,
+          },
+          asteroids: newAsteroids,
+          score: newScore,
+        };
+      }
+
+      // Regular bullet shooting
+      if (prev.bullets.length >= GAME_CONSTANTS.MAX_BULLETS) {
+        console.log('Cannot shoot - max bullets reached');
         return prev;
       }
 
@@ -385,69 +455,114 @@ export const useAsteroidGameLogic = () => {
     });
   }, []);
 
-  const updateSpaceship = useCallback((controls: any) => {
-    setGameState(prev => {
-      // Decrement fire rate timer
-      if (fireRateTimerRef.current > 0) {
-        fireRateTimerRef.current--;
-      }
+// Helper function to calculate distance from point to line
+const pointToLineDistance = (px: number, py: number, x1: number, y1: number, x2: number, y2: number): number => {
+  const A = px - x1;
+  const B = py - y1;
+  const C = x2 - x1;
+  const D = y2 - y1;
 
-      // Update powerup timers
-      const newPowerups = {
-        rapidFire: Math.max(0, prev.powerups.rapidFire - 1),
-        shield: Math.max(0, prev.powerups.shield - 1),
-        laser: Math.max(0, prev.powerups.laser - 1),
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  
+  if (lenSq === 0) return Math.sqrt(A * A + B * B);
+  
+  let param = dot / lenSq;
+  
+  let xx, yy;
+  
+  if (param < 0) {
+    xx = x1;
+    yy = y1;
+  } else if (param > 1) {
+    xx = x2;
+    yy = y2;
+  } else {
+    xx = x1 + param * C;
+    yy = y1 + param * D;
+  }
+  
+  const dx = px - xx;
+  const dy = py - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+const updateSpaceship = useCallback((controls: any) => {
+  setGameState(prev => {
+    // Decrement fire rate timer
+    if (fireRateTimerRef.current > 0) {
+      fireRateTimerRef.current--;
+    }
+
+    // Update laser beam duration
+    let newLaserBeam = prev.laserBeam;
+    if (newLaserBeam && newLaserBeam.duration > 0) {
+      newLaserBeam = {
+        ...newLaserBeam,
+        duration: newLaserBeam.duration - 1,
       };
-
-      const { spaceship } = prev;
-      let newRotation = spaceship.rotation;
-      let newVelocity = { ...spaceship.velocity };
-
-      if (controls.left) newRotation -= GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
-      if (controls.right) newRotation += GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
-
-      if (controls.thrust) {
-        newVelocity.x += Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
-        newVelocity.y += Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
+      if (newLaserBeam.duration <= 0) {
+        newLaserBeam = null;
       }
+    }
 
-      if (controls.reverse) {
-        newVelocity.x -= Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
-        newVelocity.y -= Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
-      }
+    // Update powerup timers
+    const newPowerups = {
+      rapidFire: Math.max(0, prev.powerups.rapidFire - 1),
+      shield: Math.max(0, prev.powerups.shield - 1),
+      laser: Math.max(0, prev.powerups.laser - 1),
+    };
 
-      newVelocity.x *= GAME_CONSTANTS.SPACESHIP_FRICTION;
-      newVelocity.y *= GAME_CONSTANTS.SPACESHIP_FRICTION;
+    const { spaceship } = prev;
+    let newRotation = spaceship.rotation;
+    let newVelocity = { ...spaceship.velocity };
 
-      const speed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
-      if (speed > GAME_CONSTANTS.SPACESHIP_MAX_SPEED) {
-        newVelocity.x = (newVelocity.x / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
-        newVelocity.y = (newVelocity.y / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
-      }
+    if (controls.left) newRotation -= GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
+    if (controls.right) newRotation += GAME_CONSTANTS.SPACESHIP_ROTATION_SPEED;
 
-      // Apply gravity wells to spaceship
-      newVelocity = applyGravityWells(spaceship.position, newVelocity);
+    if (controls.thrust) {
+      newVelocity.x += Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
+      newVelocity.y += Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST;
+    }
 
-      const newPosition = {
-        x: spaceship.position.x + newVelocity.x,
-        y: spaceship.position.y + newVelocity.y,
-      };
+    if (controls.reverse) {
+      newVelocity.x -= Math.cos(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
+      newVelocity.y -= Math.sin(newRotation) * GAME_CONSTANTS.SPACESHIP_THRUST * 0.7;
+    }
 
-      return {
-        ...prev,
-        spaceship: {
-          ...spaceship,
-          position: wrapPosition(newPosition),
-          rotation: newRotation,
-          velocity: newVelocity,
-          isThrusting: controls.thrust,
-        },
-        powerups: newPowerups,
-      };
-    });
-  }, [applyGravityWells]);
+    newVelocity.x *= GAME_CONSTANTS.SPACESHIP_FRICTION;
+    newVelocity.y *= GAME_CONSTANTS.SPACESHIP_FRICTION;
 
-  const updateBullets = useCallback(() => {
+    const speed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
+    if (speed > GAME_CONSTANTS.SPACESHIP_MAX_SPEED) {
+      newVelocity.x = (newVelocity.x / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
+      newVelocity.y = (newVelocity.y / speed) * GAME_CONSTANTS.SPACESHIP_MAX_SPEED;
+    }
+
+    // Apply gravity wells to spaceship
+    newVelocity = applyGravityWells(spaceship.position, newVelocity);
+
+    const newPosition = {
+      x: spaceship.position.x + newVelocity.x,
+      y: spaceship.position.y + newVelocity.y,
+    };
+
+    return {
+      ...prev,
+      spaceship: {
+        ...spaceship,
+        position: wrapPosition(newPosition),
+        rotation: newRotation,
+        velocity: newVelocity,
+        isThrusting: controls.thrust,
+      },
+      powerups: newPowerups,
+      laserBeam: newLaserBeam,
+    };
+  });
+}, [applyGravityWells]);
+
+const updateBullets = useCallback(() => {
     setGameState(prev => ({
       ...prev,
       bullets: prev.bullets
@@ -568,30 +683,7 @@ export const useAsteroidGameLogic = () => {
       let newScore = prev.score;
       let spaceshipHit = false;
 
-      // Laser instantly destroys asteroids on touch
-      if (prev.powerups.laser > 0) {
-        for (let j = newAsteroids.length - 1; j >= 0; j--) {
-          const asteroid = newAsteroids[j];
-          const asteroidSize = GAME_CONSTANTS.ASTEROID_SIZES[asteroid.size];
-          const distance = Math.sqrt(
-            (prev.spaceship.position.x - asteroid.position.x) ** 2 +
-            (prev.spaceship.position.y - asteroid.position.y) ** 2
-          );
-          
-          if (distance < (asteroidSize / 2 + GAME_CONSTANTS.SPACESHIP_SIZE / 2 + 20)) { // Slightly larger range for laser
-            const destroyedAsteroid = newAsteroids.splice(j, 1)[0];
-            
-            // Don't drop items from laser-destroyed asteroids to prevent exploitation
-            const typeData = GAME_CONSTANTS.ASTEROID_TYPES[asteroid.type];
-            const sizePoints = GAME_CONSTANTS.POINTS[asteroid.size];
-            newScore += sizePoints * typeData.points;
-            
-            if (createExplosion) {
-              createExplosion(asteroid.position.x, asteroid.position.y, '#ff0040', 12);
-            }
-          }
-        }
-      }
+    // Remove the old laser collision detection since it's now handled in shoot()
 
       // Bullet-asteroid collisions
       for (let i = newBullets.length - 1; i >= 0; i--) {

@@ -1,4 +1,3 @@
-
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 800,
   CANVAS_HEIGHT: 600,
@@ -70,4 +69,8 @@ export const GAME_CONSTANTS = {
   
   // Explosion
   EXPLOSION_RADIUS: 100,
+  
+  // Laser beam
+  LASER_BEAM_DURATION: 8, // frames to show the beam
+  LASER_BEAM_RANGE: 1000, // max range of laser beam
 } as const;
