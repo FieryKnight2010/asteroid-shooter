@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
@@ -189,7 +188,7 @@ export const useAsteroidGameLogic = () => {
     let asteroidType = type;
     if (!asteroidType) {
       const random = Math.random();
-      if (random < 0.05) { // 5% chance for powerups
+      if (random < 0.15) { // Increased from 5% to 15% chance for powerups
         const powerupTypes: Asteroid['type'][] = ['rapidFire', 'shield', 'extraLife'];
         asteroidType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
       } else {

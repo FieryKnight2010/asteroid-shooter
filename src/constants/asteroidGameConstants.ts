@@ -23,9 +23,9 @@ export const GAME_CONSTANTS = {
     small: { min: 0.5, max: 1.2 }
   },
   ASTEROID_SIZES: {
-    large: 40,
-    medium: 25,
-    small: 15
+    large: 50,
+    medium: 35,
+    small: 20
   },
   
   // Asteroid types
