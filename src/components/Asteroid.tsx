@@ -21,6 +21,8 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
         return { color: '#444444', glow: 'rgba(68, 68, 68, 0.4)', border: '#222222' };
       case 'explosive':
         return { color: '#ff4400', glow: 'rgba(255, 68, 0, 0.4)', border: '#cc3300' };
+      case 'homing':
+        return { color: '#ff0088', glow: 'rgba(255, 0, 136, 0.6)', border: '#cc0066' };
       case 'rapidFire':
         return { color: '#ffff00', glow: 'rgba(255, 255, 0, 0.6)', border: '#ffaa00' };
       case 'shield':
@@ -64,7 +66,7 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
           fill="none"
           stroke={variant.glow}
           strokeWidth={isPowerup ? "4" : "3"}
-          className={isPowerup ? "animate-pulse" : ""}
+          className={isPowerup || type === 'homing' ? "animate-pulse" : ""}
         />
         
         {/* Main asteroid body */}
@@ -89,6 +91,16 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
             <circle cx="20" cy="20" r="3" fill="#ff0000" opacity="0.6" className="animate-pulse" />
             <circle cx="15" cy="15" r="1" fill="#ff0000" opacity="0.8" />
             <circle cx="25" cy="25" r="1" fill="#ff0000" opacity="0.8" />
+          </>
+        )}
+        
+        {type === 'homing' && (
+          <>
+            <polygon points="20,8 18,12 22,12" fill="#ffffff" className="animate-pulse" />
+            <polygon points="20,28 18,32 22,32" fill="#ffffff" className="animate-pulse" />
+            <polygon points="8,20 12,18 12,22" fill="#ffffff" className="animate-pulse" />
+            <polygon points="32,20 28,18 28,22" fill="#ffffff" className="animate-pulse" />
+            <circle cx="20" cy="20" r="2" fill="#ffffff" opacity="0.8" className="animate-pulse" />
           </>
         )}
         
@@ -119,7 +131,7 @@ const Asteroid: React.FC<AsteroidProps> = ({ asteroid }) => {
         )}
         
         {/* Surface details for non-powerup asteroids */}
-        {!isPowerup && (
+        {!isPowerup && type !== 'homing' && (
           <>
             <circle cx="15" cy="15" r="2" fill={variant.border} opacity="0.7" />
             <circle cx="25" cy="25" r="1.5" fill={variant.border} opacity="0.8" />

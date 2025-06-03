@@ -192,7 +192,7 @@ export const useAsteroidGameLogic = () => {
         const powerupTypes: Asteroid['type'][] = ['rapidFire', 'shield', 'extraLife'];
         asteroidType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
       } else {
-        asteroidType = (['normal', 'fast', 'armored', 'explosive'][Math.floor(Math.random() * 4)] as Asteroid['type']);
+        asteroidType = (['normal', 'fast', 'armored', 'explosive', 'homing'][Math.floor(Math.random() * 5)] as Asteroid['type']);
       }
     }
     
@@ -453,7 +453,34 @@ export const useAsteroidGameLogic = () => {
     setGameState(prev => ({
       ...prev,
       asteroids: prev.asteroids.map(asteroid => {
-        const gravityAffectedVelocity = applyGravityWells(asteroid.position, asteroid.velocity);
+        let newVelocity = { ...asteroid.velocity };
+        
+        // Apply homing behavior for homing asteroids
+        if (asteroid.type === 'homing' && prev.spaceship) {
+          const dx = prev.spaceship.position.x - asteroid.position.x;
+          const dy = prev.spaceship.position.y - asteroid.position.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance > 0) {
+            // Gentle homing force - much weaker than gravity wells
+            const homingStrength = 0.02; // Very gentle homing
+            const homingForceX = (dx / distance) * homingStrength;
+            const homingForceY = (dy / distance) * homingForceY;
+            
+            newVelocity.x += homingForceX;
+            newVelocity.y += homingForceY;
+            
+            // Cap velocity to maintain slower movement
+            const speed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
+            const maxHomingSpeed = 2; // Slower than normal asteroids
+            if (speed > maxHomingSpeed) {
+              newVelocity.x = (newVelocity.x / speed) * maxHomingSpeed;
+              newVelocity.y = (newVelocity.y / speed) * maxHomingSpeed;
+            }
+          }
+        }
+        
+        const gravityAffectedVelocity = applyGravityWells(asteroid.position, newVelocity);
         return {
           ...asteroid,
           position: wrapPosition({
