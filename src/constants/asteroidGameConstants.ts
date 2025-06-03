@@ -1,10 +1,11 @@
 
+
 export const GAME_CONSTANTS = {
   CANVAS_WIDTH: 800,
   CANVAS_HEIGHT: 600,
   
   // Spaceship
-  SPACESHIP_SIZE: 30,
+  SPACESHIP_SIZE: 50,
   SPACESHIP_THRUST: 0.3,
   SPACESHIP_ROTATION_SPEED: 0.15,
   SPACESHIP_MAX_SPEED: 8,
@@ -23,9 +24,9 @@ export const GAME_CONSTANTS = {
     small: { min: 0.5, max: 1.2 }
   },
   ASTEROID_SIZES: {
-    large: 50,
-    medium: 35,
-    small: 20
+    large: 60,
+    medium: 45,
+    small: 30
   },
   
   // Asteroid types
@@ -65,3 +66,4 @@ export const GAME_CONSTANTS = {
   // Explosion
   EXPLOSION_RADIUS: 100,
 } as const;
+
