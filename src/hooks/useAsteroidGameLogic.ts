@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
@@ -465,7 +466,7 @@ export const useAsteroidGameLogic = () => {
             // Gentle homing force - much weaker than gravity wells
             const homingStrength = 0.02; // Very gentle homing
             const homingForceX = (dx / distance) * homingStrength;
-            const homingForceY = (dy / distance) * homingForceY;
+            const homingForceY = (dy / distance) * homingStrength;
             
             newVelocity.x += homingForceX;
             newVelocity.y += homingForceY;
