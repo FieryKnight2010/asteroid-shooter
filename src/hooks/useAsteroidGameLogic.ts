@@ -69,6 +69,12 @@ export const useAsteroidGameLogic = () => {
         
         newVelocity.x += forceX;
         newVelocity.y += forceY;
+        
+        // Add damping effect to slow down objects within gravity well
+        // Objects closer to center experience more damping
+        const dampingFactor = 1 - (well.radius - distance) / well.radius * 0.05;
+        newVelocity.x *= dampingFactor;
+        newVelocity.y *= dampingFactor;
       }
     });
     
