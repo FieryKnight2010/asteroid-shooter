@@ -125,7 +125,8 @@ export const useAsteroidGameLogic = () => {
   const createAsteroid = (position: Position, size: 'large' | 'medium' | 'small', type?: Asteroid['type']): Asteroid => {
     const currentTime = Date.now();
     const timeElapsed = (currentTime - gameStartTimeRef.current) / 1000;
-    const speedMultiplier = 1 + (timeElapsed * 0.05);
+    // Reduced speed multiplier from 0.05 to 0.02 for slower progression
+    const speedMultiplier = 1 + (timeElapsed * 0.02);
     
     let asteroidType = type;
     if (!asteroidType) {
