@@ -207,7 +207,7 @@ export const useAsteroidGameLogic = () => {
     if (!asteroidType) {
       const random = Math.random();
       if (random < 0.15) { // Increased from 5% to 15% chance for powerups
-        const powerupTypes: Asteroid['type'][] = ['rapidFire', 'shield', 'extraLife', 'laser'];
+        const powerupTypes: Asteroid['type'][] = ['rapidFire', 'shield', 'extraLife'];
         asteroidType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
       } else {
         asteroidType = (['normal', 'fast', 'armored', 'explosive', 'homing'][Math.floor(Math.random() * 5)] as Asteroid['type']);
@@ -461,7 +461,7 @@ const pointToLineDistance = (px: number, py: number, x1: number, y1: number, x2:
   const B = py - y1;
   const C = x2 - x1;
   const D = y2 - y1;
-
+  
   const dot = A * C + B * D;
   const lenSq = C * C + D * D;
   

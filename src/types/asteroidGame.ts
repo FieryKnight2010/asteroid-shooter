@@ -1,3 +1,4 @@
+
 export interface Position {
   x: number;
   y: number;
@@ -29,7 +30,7 @@ export interface Asteroid {
   size: 'large' | 'medium' | 'small';
   rotation: number;
   rotationSpeed: number;
-  type: 'normal' | 'fast' | 'armored' | 'explosive' | 'rapidFire' | 'shield' | 'extraLife' | 'homing' | 'laser';
+  type: 'normal' | 'fast' | 'armored' | 'explosive' | 'rapidFire' | 'shield' | 'extraLife' | 'homing';
   health: number;
   maxHealth: number;
 }

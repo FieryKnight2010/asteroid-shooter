@@ -36,8 +36,7 @@ export const GAME_CONSTANTS = {
     homing: { health: 1, speedMultiplier: 0.6, points: 4 },
     rapidFire: { health: 1, speedMultiplier: 0.8, points: 5 },
     shield: { health: 1, speedMultiplier: 0.8, points: 5 },
-    extraLife: { health: 1, speedMultiplier: 0.8, points: 5 },
-    laser: { health: 1, speedMultiplier: 0.8, points: 5 }
+    extraLife: { health: 1, speedMultiplier: 0.8, points: 5 }
   },
   
   // Powerup durations (in frames)
