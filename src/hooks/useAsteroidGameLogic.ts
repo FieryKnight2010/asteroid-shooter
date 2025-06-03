@@ -79,6 +79,14 @@ export const useAsteroidGameLogic = () => {
       }
     });
     
+    // Cap velocity to prevent objects from moving too fast after gravity well effects
+    const maxVelocity = 8; // Reasonable maximum speed
+    const currentSpeed = Math.sqrt(newVelocity.x ** 2 + newVelocity.y ** 2);
+    if (currentSpeed > maxVelocity) {
+      newVelocity.x = (newVelocity.x / currentSpeed) * maxVelocity;
+      newVelocity.y = (newVelocity.y / currentSpeed) * maxVelocity;
+    }
+    
     return newVelocity;
   }, [gameState.gravityWells]);
 
