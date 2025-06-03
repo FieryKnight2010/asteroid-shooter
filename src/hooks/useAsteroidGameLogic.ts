@@ -1,3 +1,4 @@
+
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { GameState, Spaceship, Bullet, Asteroid, Position, PowerupState, GravityWell, Velocity } from '../types/asteroidGame';
@@ -61,7 +62,8 @@ export const useAsteroidGameLogic = () => {
       const distance = Math.sqrt(dx * dx + dy * dy);
       
       if (distance < well.radius && distance > 0) {
-        const force = well.strength / (distance * distance) * 100;
+        // Increased force multiplier from 100 to 500 for much stronger gravity
+        const force = well.strength / (distance * distance) * 500;
         const forceX = (dx / distance) * force;
         const forceY = (dy / distance) * force;
         
